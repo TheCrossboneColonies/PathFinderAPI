@@ -1,0 +1,53 @@
+package com.tcc.pathfinderapi.pathing;
+
+import org.bukkit.Location;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class PathNode {
+
+    private int x;
+    private short y;
+    private int z;
+    private List<PathNode> neighbors;
+
+    // QUESTION: Some nodes have warps associated with them to different locations, worlds, or servers. How to store this?
+    // There will be millions of PathNode objects and only a handful of nodes with the above data
+
+    public PathNode(Location loc){
+        this.x = loc.getBlockX();
+        this.y = (short) loc.getBlockY();
+        this.z = loc.getBlockZ();
+        this.neighbors = new ArrayList<>();
+    }
+
+    public PathNode(int x, short y, int z){
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.neighbors = new ArrayList<>();
+    }
+
+    public int getX(){ return x; }
+    public short getY(){ return y; }
+    public int getZ(){ return z; }
+
+    /**
+     *
+     * @return unmodifiable list of neighbors for this node
+     */
+    public List<PathNode> getNeighbors() { return Collections.unmodifiableList(neighbors); }
+
+    public void addNeighbor(PathNode neighbor){
+        this.neighbors.add(neighbor);
+    }
+
+    public boolean removeNeighbor(PathNode neighbor){
+        return this.neighbors.remove(neighbor);
+    }
+
+
+
+}

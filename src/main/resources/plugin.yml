@@ -1,0 +1,6 @@
+name: PathFinderAPI
+version: '${project.version}'
+main: com.tcc.pathfinderapi.PathFinderAPI
+api-version: 1.19
+authors: [ kwilk ]
+description: Developer utility to find paths between locations or entities
