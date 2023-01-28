@@ -122,6 +122,7 @@ public final class PathFinderAPI extends JavaPlugin {
                             .argument(StringArgument.optional("number", StringArgument.StringMode.SINGLE))
                             .senderType(Player.class)
                             .meta(CommandConfirmationManager.META_CONFIRMATION_REQUIRED, true)
+
                             .handler(context -> {
                                 Player player = (Player) context.getSender();
                                 String testNum = context.getOrDefault("number", "0");
