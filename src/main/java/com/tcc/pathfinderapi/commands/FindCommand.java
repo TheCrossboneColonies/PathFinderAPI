@@ -1,5 +1,6 @@
 package com.tcc.pathfinderapi.commands;
 
+import cloud.commandframework.ArgumentDescription;
 import cloud.commandframework.Command;
 import cloud.commandframework.CommandManager;
 import cloud.commandframework.arguments.standard.StringArgument;
@@ -25,10 +26,12 @@ public class FindCommand {
     }
 
     public void registerCommand(CommandManager<CommandSender> manager){
+
         manager.command(
-                manager.commandBuilder("pathapi")
-                        .permission("pathapi.connect")
-                        .literal("connect")
+                manager.commandBuilder("pathapi", ArgumentDescription.of("Find a path between 2 locations"))
+                        .permission("pathapi.find")
+
+                        .literal("find")
                         .argument(LocationArgument.of("start"))
                         .argument(LocationArgument.of("end"))
                         .senderType(Player.class)
