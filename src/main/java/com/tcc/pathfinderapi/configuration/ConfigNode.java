@@ -2,6 +2,8 @@ package com.tcc.pathfinderapi.configuration;
 
 public enum ConfigNode {
 
+    PERFORMANCE_CHUNK_INVALIDATION_TIME("config.yml", "performance.chunk_invalidation_time"),
+
     MESSAGES_PREFIX("lang.yml","messages.prefix");
 
     private final String FILE_PATH;

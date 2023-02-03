@@ -1,0 +1,7 @@
+
+performance:
+  # Time in milliseconds between checks for block changes in a chunk
+  # Pathfinders operate asynchronously and therefore use copies of block data to pathfind with, not the data itself.
+  # A higher value here means better performance, but potential inaccuracy.
+  # Default: 10,000
+  chunk_invalidation_time: 10000

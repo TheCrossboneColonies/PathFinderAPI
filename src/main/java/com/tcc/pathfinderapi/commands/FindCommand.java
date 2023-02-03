@@ -1,18 +1,13 @@
 package com.tcc.pathfinderapi.commands;
 
 import cloud.commandframework.ArgumentDescription;
-import cloud.commandframework.Command;
 import cloud.commandframework.CommandManager;
-import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.bukkit.parsers.location.LocationArgument;
-import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.pathing.PathNode;
-import com.tcc.pathfinderapi.pathing.pathfinders.PartialRefinementAStar;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

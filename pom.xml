@@ -43,6 +43,7 @@
                                 <includes>
                                     <include>cloud.commandframework:*</include>
                                     <include>net.kyori</include>
+                                    <include>com.google.common</include>
                                 </includes>
                             </artifactSet>
                             <outputFile>C:\Users\kylew\Desktop\19testing\plugins\PathFinderAPI.jar</outputFile>
@@ -92,5 +93,12 @@
             <artifactId>adventure-platform-bukkit</artifactId>
             <version>4.2.0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.common/google-collect -->
+        <dependency>
+            <groupId>com.google.common</groupId>
+            <artifactId>google-collect</artifactId>
+            <version>0.5</version>
+        </dependency>
+
     </dependencies>
 </project>
