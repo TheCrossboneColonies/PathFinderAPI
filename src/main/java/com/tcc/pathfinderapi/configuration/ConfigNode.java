@@ -2,6 +2,7 @@ package com.tcc.pathfinderapi.configuration;
 
 public enum ConfigNode {
 
+    DEBUG_MODE_ENABLED("config.yml", "debug_mode_enabled"),
     PERFORMANCE_CHUNK_INVALIDATION_TIME("config.yml", "performance.chunk_invalidation_time"),
 
     MESSAGES_PREFIX("lang.yml","messages.prefix");

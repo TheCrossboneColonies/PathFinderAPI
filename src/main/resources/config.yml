@@ -1,4 +1,6 @@
 
+debug_mode_enabled: false
+
 performance:
   # Time in milliseconds between checks for block changes in a chunk
   # Pathfinders operate asynchronously and therefore use copies of block data to pathfind with, not the data itself.

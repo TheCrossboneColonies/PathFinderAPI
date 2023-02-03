@@ -10,6 +10,7 @@ import cloud.commandframework.meta.CommandMeta;
 import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
 import cloud.commandframework.minecraft.extras.MinecraftHelp;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentBuilder;
@@ -37,6 +38,9 @@ public final class PathFinderAPI extends JavaPlugin {
         // Load config files
         configManager = new ConfigManager(this);
         configManager.loadConfigFiles();
+
+        // Set up messager class
+        new PathAPIMessager(this, configManager);
 
         // TODO: Set up dependencies
 
