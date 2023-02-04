@@ -54,20 +54,20 @@ public class FindCommand {
                             // Run this code if a path is found successfully
                             .thenAccept(list -> {
                                 PathAPIMessager.info("Path of length " + list.size() + " found in " + (System.currentTimeMillis() - startTime) + " ms");
-                                for(Coordinate coord : list){
-                                    Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-                                    loc.getBlock().setType(Material.GOLD_BLOCK);
-                                }
-
-                                new BukkitRunnable() {
-                                    @Override
-                                    public void run() {
-                                        for(Coordinate coord : list){
-                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-                                            loc.getBlock().setType(Material.STONE);
-                                        }
-                                    }
-                                }.runTaskLater(plugin, 200L);
+//                                for(Coordinate coord : list){
+//                                    Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+//                                    loc.getBlock().setType(Material.GOLD_BLOCK);
+//                                }
+//
+//                                new BukkitRunnable() {
+//                                    @Override
+//                                    public void run() {
+//                                        for(Coordinate coord : list){
+//                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+//                                            loc.getBlock().setType(Material.STONE);
+//                                        }
+//                                    }
+//                                }.runTaskLater(plugin, 200L);
 
                             });
 

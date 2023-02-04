@@ -3,6 +3,7 @@ package com.tcc.pathfinderapi.messaging;
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
+import org.bukkit.Bukkit;
 
 public class PathAPIMessager {
 
@@ -32,6 +33,6 @@ public class PathAPIMessager {
      * @param message
      */
     public static void debug(String message){
-        if(debugEnabled) plugin.getLogger().fine(message);
+        if(debugEnabled) plugin.getLogger().info("DEBUG: " + message);
     }
 }

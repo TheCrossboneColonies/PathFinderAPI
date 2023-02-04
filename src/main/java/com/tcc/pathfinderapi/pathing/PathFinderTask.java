@@ -42,7 +42,7 @@ public class PathFinderTask {
                     }
                 }
             }
-        }.runTask(PathFinderAPI.getPlugin(PathFinderAPI.class)); // TODO: Change this to run async using BlockManager
+        }.runTaskAsynchronously(PathFinderAPI.getPlugin(PathFinderAPI.class));
     }
 
     /**

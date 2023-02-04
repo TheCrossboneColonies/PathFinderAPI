@@ -12,6 +12,7 @@ import cloud.commandframework.minecraft.extras.MinecraftHelp;
 import com.tcc.pathfinderapi.commands.FindCommand;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
+import com.tcc.pathfinderapi.pathing.BlockManager;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentBuilder;
@@ -32,6 +33,7 @@ public final class PathFinderAPI extends JavaPlugin {
 
     private BukkitAudiences adventure;
     private ConfigManager configManager;
+//    private BlockManager blockManager;
 
     @Override
     public void onEnable() {
@@ -40,8 +42,10 @@ public final class PathFinderAPI extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.loadConfigFiles();
 
-        // Set up messager class
+        // Set up classes without dependencies
         new PathAPIMessager(this, configManager);
+        new BlockManager(configManager);
+
 
         // TODO: Set up dependencies
 
@@ -151,4 +155,8 @@ public final class PathFinderAPI extends JavaPlugin {
     public void onDisable() {
         // Plugin shutdown logic
     }
+
+//    public BlockManager getBlockManager(){
+//        return blockManager;
+//    }
 }

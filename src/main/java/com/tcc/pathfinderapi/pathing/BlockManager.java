@@ -4,6 +4,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
+import com.tcc.pathfinderapi.objects.Coordinate;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -14,14 +16,18 @@ import java.util.concurrent.TimeUnit;
 
 public class BlockManager {
 
-    private Cache<ChunkKey, ChunkSnapshot> chunkHolder;
+    private static Cache<ChunkKey, ChunkSnapshot> chunkHolder;
 
     public BlockManager(ConfigManager configMang){
         int milliseconds = configMang.getInt(ConfigNode.PERFORMANCE_CHUNK_INVALIDATION_TIME);
-        CacheBuilder.newBuilder().expireAfterWrite(milliseconds, TimeUnit.MILLISECONDS).build();
+        chunkHolder = CacheBuilder.newBuilder().expireAfterWrite(milliseconds, TimeUnit.MILLISECONDS).build();
     }
 
-    public Material getBlockType(World world, int x, int y, int z){
+    public static Material getBlockType(World world, Coordinate coord){
+        return getBlockType(world, coord.getX(), coord.getY(), coord.getZ());
+    }
+
+    public static Material getBlockType(World world, int x, int y, int z){
         // Get chunk coordinates as single 8-byte long
         int chunkX = (int) Math.floor(x / 16.0);
         int chunkZ = (int) Math.floor(z / 16.0);
@@ -32,7 +38,7 @@ public class BlockManager {
     }
 
 
-    private ChunkSnapshot getChunkSnapshot(World world, int chunkX, int chunkZ){
+    private static ChunkSnapshot getChunkSnapshot(World world, int chunkX, int chunkZ){
         ChunkKey key = new ChunkKey(world.getName(), chunkX, chunkZ);
 
         ChunkSnapshot snapshot = chunkHolder.getIfPresent(key);
@@ -45,7 +51,7 @@ public class BlockManager {
     }
 
 
-    private class ChunkKey {
+    private static class ChunkKey {
 
         String worldName;
         int chunkX;

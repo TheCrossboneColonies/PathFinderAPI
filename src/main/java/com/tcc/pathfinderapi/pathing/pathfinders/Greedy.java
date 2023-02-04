@@ -4,10 +4,7 @@ import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.errorHandling.PathException;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
-import com.tcc.pathfinderapi.pathing.PathFinder;
-import com.tcc.pathfinderapi.pathing.PathNode;
-import com.tcc.pathfinderapi.pathing.PathStepResponse;
-import com.tcc.pathfinderapi.pathing.PathStepResult;
+import com.tcc.pathfinderapi.pathing.*;
 import org.bukkit.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -216,9 +213,11 @@ public class Greedy extends PathFinder {
             for(int xOffset = -1 * LIQUID_RADIUS; xOffset <= LIQUID_RADIUS; ++xOffset) {
                 for(int yOffset = -1 * LIQUID_RADIUS; yOffset <= LIQUID_RADIUS; ++yOffset) {
                     for(int zOffset = -1 * LIQUID_RADIUS; zOffset <= LIQUID_RADIUS; ++zOffset) {
-                        Location loc = new Location(world, coord.coordLoc.getX() + xOffset,
-                                coord.coordLoc.getY() + yOffset, coord.coordLoc.getZ() + zOffset);
-                        if(loc.getBlock().getType() == Material.WATER || loc.getBlock().getType() == Material.LAVA) return true;
+                        Material type = BlockManager.getBlockType(world,
+                                coord.coordLoc.getX() + xOffset,
+                                coord.coordLoc.getY() + yOffset,
+                                coord.coordLoc.getZ() + zOffset);
+                        if(type == Material.WATER || type == Material.LAVA) return true;
                     }
                 }
             }
@@ -237,9 +236,11 @@ public class Greedy extends PathFinder {
                     for(int zOffset = -1 * LIQUID_RADIUS; zOffset <= LIQUID_RADIUS; ++zOffset) {
                         boolean isWithinParentZ = Math.abs(zDiff + zOffset) <= LIQUID_RADIUS;
                         if(isWithinParentX && isWithinParentY && isWithinParentZ) continue;
-                        Location loc = new Location(world, coord.coordLoc.getX() + xOffset,
-                                coord.coordLoc.getY() + yOffset, coord.coordLoc.getZ() + zOffset);
-                        if(loc.getBlock().getType() == Material.WATER || loc.getBlock().getType() == Material.LAVA) return true;
+                        Material type = BlockManager.getBlockType(world,
+                                coord.coordLoc.getX() + xOffset,
+                                coord.coordLoc.getY() + yOffset,
+                                coord.coordLoc.getZ() + zOffset);
+                        if(type == Material.WATER || type == Material.LAVA) return true;
                     }
                 }
             }
@@ -259,9 +260,11 @@ public class Greedy extends PathFinder {
             for(int zOffset = -1 * CLIFF_RADIUS; zOffset <= CLIFF_RADIUS; ++zOffset) {
                 boolean columnIsAir = true;
                 for(int yOffset = -3; yOffset <= 2; ++yOffset) {
-                    Location loc = new Location(world, coord.coordLoc.getX() + xOffset,
-                            coord.coordLoc.getY() + yOffset, coord.coordLoc.getZ() + zOffset);
-                    if(!loc.getBlock().getType().isAir()) {
+                    Material type = BlockManager.getBlockType(world,
+                            coord.coordLoc.getX() + xOffset,
+                            coord.coordLoc.getY() + yOffset,
+                            coord.coordLoc.getZ() + zOffset);
+                    if(!type.isAir()) {
                         columnIsAir = false;
                         break;
                     }
@@ -356,12 +359,9 @@ public class Greedy extends PathFinder {
 
 
     private boolean isValidSolidCoordinate(int x, int y, int z) {
-        Location loc = new Location(world, x, y, z);
-        Location oneAbove = new Location(world, x, y + 1, z);
-        Location twoAbove = new Location(world, x, y + 2, z);
-        Material locMat = loc.getBlock().getType();
-        Material oneAboveMat = oneAbove.getBlock().getType();
-        Material twoAboveMat = twoAbove.getBlock().getType();
+        Material locMat = BlockManager.getBlockType(world, x, y, z);
+        Material oneAboveMat = BlockManager.getBlockType(world, x, y + 1, z);
+        Material twoAboveMat = BlockManager.getBlockType(world, x, y + 2, z);
         if((locMat.isSolid() || locMat == Material.WATER || locMat == Material.LAVA) && !locMat.toString().contains("LEAVES")) {
             if(!oneAboveMat.isSolid() && oneAboveMat != Material.WATER && oneAboveMat != Material.LAVA) {
                 if(!twoAboveMat.isSolid() && twoAboveMat != Material.WATER && twoAboveMat != Material.LAVA) {
