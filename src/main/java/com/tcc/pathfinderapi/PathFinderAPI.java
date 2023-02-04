@@ -9,6 +9,7 @@ import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
 import cloud.commandframework.meta.CommandMeta;
 import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
 import cloud.commandframework.minecraft.extras.MinecraftHelp;
+import com.tcc.pathfinderapi.commands.FindCommand;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
@@ -134,6 +135,8 @@ public final class PathFinderAPI extends JavaPlugin {
                                 player.setVelocity(new Vector(0, 0.5, -1 * Integer.parseInt(testNum)));
                             })
             );
+
+            new FindCommand(this).registerCommand(manager);
 
         } catch (Exception e) {
             e.printStackTrace();

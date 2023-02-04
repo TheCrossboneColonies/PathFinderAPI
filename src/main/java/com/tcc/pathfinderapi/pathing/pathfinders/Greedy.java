@@ -2,14 +2,13 @@ package com.tcc.pathfinderapi.pathing.pathfinders;
 
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.errorHandling.PathException;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import com.tcc.pathfinderapi.pathing.PathFinder;
 import com.tcc.pathfinderapi.pathing.PathNode;
 import com.tcc.pathfinderapi.pathing.PathStepResponse;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import com.tcc.pathfinderapi.pathing.PathStepResult;
+import org.bukkit.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -27,7 +26,7 @@ public class Greedy extends PathFinder {
     private RoadCoordinate currentBackTraceNode;
     private PriorityQueue<RoadCoordinate> closedList;
     private PriorityQueue<RoadCoordinate> openList;
-    // TODO: UTILIZE THIS IN STEP() method
+
     private PathBuildStage currentStage = PathBuildStage.SEARCH;
     private int stepCount = 0;
     private long startSearchTime;
@@ -53,8 +52,8 @@ public class Greedy extends PathFinder {
 
         this.world = start.getWorld();
         //Start and end swapped so path is generated from start to end (due to backtracing)
-        this.start = new RoadCoordinate(end.getBlockX(), end.getBlockY(), end.getBlockZ(), false);
-        this.end = new RoadCoordinate(start.getBlockX(), start.getBlockY(), start.getBlockZ(), false);
+        this.start = new RoadCoordinate(start.getBlockX(), start.getBlockY(), start.getBlockZ(), false);
+        this.end = new RoadCoordinate(end.getBlockX(), end.getBlockY(), end.getBlockZ(), false);
 
         //Pathing variables
         closedList = new PriorityQueue<RoadCoordinate>();
@@ -67,27 +66,37 @@ public class Greedy extends PathFinder {
 
     }
 
+    @Override
+    protected void onStart(){
+        startSearchTime = System.currentTimeMillis();
+    }
+
 
     @Override
     protected PathStepResponse step() {
         if(currentStage == PathBuildStage.SEARCH){
             stepSearch();
-            return PathStepResponse.CONTINUE;
+            return new PathStepResponse(PathStepResult.CONTINUE);
         }
         else if(currentStage == PathBuildStage.BACKTRACE){
             stepBacktrace();
-            return PathStepResponse.CONTINUE;
+            return new PathStepResponse(PathStepResult.CONTINUE);
         }
-        else if(currentStage == PathBuildStage.SUCCESS) return PathStepResponse.SUCCESSFUL;
-        else return PathStepResponse.NO_PATH_EXISTS;
+        else if(currentStage == PathBuildStage.SUCCESS) {
+            PathStepResponse response = new PathStepResponse(PathStepResult.SUCCESS);
+            response.addMetaData("path", fullPath);
+            return response;
+        }
+
+        PathStepResponse response = new PathStepResponse(PathStepResult.ERROR);
+        response.addMetaData("error_message", "Path could not be found");
+        return response;
     }
 
     private boolean stepSearch() {
 
         if(openList.isEmpty()) {
-            // TODO: Replace using messenger
-
-            Bukkit.getConsoleSender().sendMessage("Error: No path found! Open list empty");
+            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Open list empty"));
             currentStage = PathBuildStage.ERROR;
             return true; //Error, no path found
         }
@@ -101,7 +110,7 @@ public class Greedy extends PathFinder {
 
         //Check if step count has surpassed the limit
         if(!keepSearchingCheck.test(stepCount)) {
-            Bukkit.getConsoleSender().sendMessage("Error: No path found! Too many steps taken");
+            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Too many steps taken"));
             currentStage = PathBuildStage.ERROR;
             return true; //Error, no path found
         }
@@ -110,7 +119,8 @@ public class Greedy extends PathFinder {
         RoadCoordinate n = openList.peek();
 
         if(n == end){
-            Bukkit.getConsoleSender().sendMessage("Path found! Backtracing started. Path search time: " + (System.currentTimeMillis() - startSearchTime) + " ms");
+            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&aPath found! Backtracing started." +
+                    " Path search time: " + (System.currentTimeMillis() - startSearchTime) + " ms"));
             currentBackTraceNode = end;
             currentStage = PathBuildStage.BACKTRACE;
 
@@ -157,8 +167,7 @@ public class Greedy extends PathFinder {
             //TODO: Optimize path length one last time
 
 
-
-            Bukkit.getConsoleSender().sendMessage("Backtracing complete! Path length: " + fullPath.size());
+            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cBacktracing complete! Path length: " + fullPath.size()));
 
             currentStage = PathBuildStage.SUCCESS;
 

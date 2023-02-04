@@ -2,6 +2,7 @@ package com.tcc.pathfinderapi.pathing;
 
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.errorHandling.PathException;
+import com.tcc.pathfinderapi.objects.Coordinate;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -11,38 +12,44 @@ import java.util.concurrent.CompletableFuture;
 public class PathFinderTask {
 
     private BukkitTask task;
-    private List<PathNode> path;
-    private CompletableFuture<List<PathNode>> pathFuture;
+
+    private CompletableFuture<List<Coordinate>> pathFuture;
 
     PathFinderTask(PathFinder pathFinder){
 
         pathFuture = new CompletableFuture<>();
 
-        new BukkitRunnable() {
+        pathFinder.onStart();
+
+        task = new BukkitRunnable() {
             @Override
             public void run() {
                 while(true) {
                     PathStepResponse response = pathFinder.step();
 
-                    if (response == PathStepResponse.SUCCESSFUL) {
+                    if (response.getResult() == PathStepResult.SUCCESS) {
                         cancel();
-                        pathFuture.complete(path);
+                        pathFinder.onComplete();
+                        pathFinder.onSuccess();
+                        pathFuture.complete((List<Coordinate>) response.getMetaData("path"));
                         return;
-                    } else if (response == PathStepResponse.NO_PATH_EXISTS) {
+                    } else if (response.getResult() == PathStepResult.ERROR) {
                         cancel();
-                        pathFuture.completeExceptionally(new PathException("No path found."));
+                        pathFinder.onComplete();
+                        pathFinder.onError();
+                        pathFuture.completeExceptionally(new PathException((String) response.getMetaData("error_message")));
                         return;
                     }
                 }
             }
-        }.runTaskAsynchronously(PathFinderAPI.getPlugin(PathFinderAPI.class));
+        }.runTask(PathFinderAPI.getPlugin(PathFinderAPI.class)); // TODO: Change this to run async using BlockManager
     }
 
     /**
      *
      * @return a future to the complete path
      */
-    public CompletableFuture<List<PathNode>> getPath(){
+    public CompletableFuture<List<Coordinate>> getPath(){
         return pathFuture;
     }
 

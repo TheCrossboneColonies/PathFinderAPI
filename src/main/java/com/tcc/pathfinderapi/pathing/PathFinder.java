@@ -29,6 +29,18 @@ public abstract class PathFinder {
         public final PathFinderTask run(){
                 return PathFinderScheduler.run(this);
         }
+        protected void onStart(){
+
+        }
+        protected void onComplete(){
+
+        }
+        protected void onSuccess(){
+
+        }
+        protected void onError(){
+
+        }
 
         protected abstract PathStepResponse step();
 

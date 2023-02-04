@@ -93,12 +93,5 @@
             <artifactId>adventure-platform-bukkit</artifactId>
             <version>4.2.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.common/google-collect -->
-        <dependency>
-            <groupId>com.google.common</groupId>
-            <artifactId>google-collect</artifactId>
-            <version>0.5</version>
-        </dependency>
-
     </dependencies>
 </project>

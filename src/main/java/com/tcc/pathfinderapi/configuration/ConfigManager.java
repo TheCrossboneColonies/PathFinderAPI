@@ -42,6 +42,9 @@ public class ConfigManager {
 
     public void loadConfigFiles() {
 
+        // Ensure directory exists
+        if(!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+
         // Loop through each config file
         for (String filePath : configFiles) {
             File file = new File(plugin.getDataFolder() + File.separator + filePath);
