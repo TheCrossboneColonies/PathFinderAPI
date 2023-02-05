@@ -2,16 +2,22 @@ package com.tcc.pathfinderapi.pathing;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
+import org.bukkit.Bukkit;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 public class BlockManager {
@@ -28,9 +34,9 @@ public class BlockManager {
     }
 
     public static Material getBlockType(World world, int x, int y, int z){
-        // Get chunk coordinates as single 8-byte long
-        int chunkX = (int) Math.floor(x / 16.0);
-        int chunkZ = (int) Math.floor(z / 16.0);
+
+        int chunkX = x >> 4;
+        int chunkZ = z >> 4;
 
         ChunkSnapshot snapshot = getChunkSnapshot(world, chunkX, chunkZ);
         // Return block type using location relative to chunk origin
@@ -49,6 +55,7 @@ public class BlockManager {
         chunkHolder.put(key, snapshot);
         return snapshot;
     }
+
 
 
     private static class ChunkKey {

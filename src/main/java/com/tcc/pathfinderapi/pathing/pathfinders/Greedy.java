@@ -40,6 +40,10 @@ public class Greedy extends PathFinder {
     private final double CLIFF_PENALTY = 20;
     private final int CLIFF_RADIUS = 2;
 
+    // Performance variables
+    private long neighborNS = 0;
+    private long heuristicNS = 0;
+
     public Greedy(Location start, Location end){
         super(start, end);
 
@@ -49,8 +53,8 @@ public class Greedy extends PathFinder {
 
         this.world = start.getWorld();
         //Start and end swapped so path is generated from start to end (due to backtracing)
-        this.start = new RoadCoordinate(start.getBlockX(), start.getBlockY(), start.getBlockZ(), false);
-        this.end = new RoadCoordinate(end.getBlockX(), end.getBlockY(), end.getBlockZ(), false);
+        this.start = new RoadCoordinate(start.getBlockX(), start.getBlockY(), start.getBlockZ());
+        this.end = new RoadCoordinate(end.getBlockX(), end.getBlockY(), end.getBlockZ());
 
         //Pathing variables
         closedList = new PriorityQueue<RoadCoordinate>();
@@ -82,6 +86,9 @@ public class Greedy extends PathFinder {
         else if(currentStage == PathBuildStage.SUCCESS) {
             PathStepResponse response = new PathStepResponse(PathStepResult.SUCCESS);
             response.addMetaData("path", fullPath);
+            // TODO: REMOVE
+            PathAPIMessager.debug("Greedy neighbor ms: " + (neighborNS / 1000));
+            PathAPIMessager.debug("Greedy heuristic ms: " + (heuristicNS / 1000));
             return response;
         }
 
@@ -184,6 +191,8 @@ public class Greedy extends PathFinder {
      */
     private double heuristicDistance(RoadCoordinate currentLoc) {
 
+        long startTime = System.nanoTime();
+
         double weight = currentLoc.coordLoc.distance(end.coordLoc);
 
         //Give punishment for water
@@ -192,13 +201,13 @@ public class Greedy extends PathFinder {
             weight += LIQUID_PENALTY;
         }
 
-        //Give punishment for cliff (non air blocks only)
-        if(!currentLoc.isAir) {
-            currentLoc.isNearCliff = isCoordNearCliff(currentLoc);
-            if(currentLoc.isNearCliff) {
-                weight += CLIFF_PENALTY;
-            }
+        //Give punishment for cliff
+        currentLoc.isNearCliff = isCoordNearCliff(currentLoc);
+        if(currentLoc.isNearCliff) {
+            weight += CLIFF_PENALTY;
         }
+
+        heuristicNS += System.nanoTime() - startTime;
 
         return  weight;
     }
@@ -210,40 +219,36 @@ public class Greedy extends PathFinder {
      */
     private boolean isCoordNearLiquid(RoadCoordinate coord) {
         if(coord.parent == null || coord.parent.isNearLiquid) {
-            for(int xOffset = -1 * LIQUID_RADIUS; xOffset <= LIQUID_RADIUS; ++xOffset) {
-                for(int yOffset = -1 * LIQUID_RADIUS; yOffset <= LIQUID_RADIUS; ++yOffset) {
-                    for(int zOffset = -1 * LIQUID_RADIUS; zOffset <= LIQUID_RADIUS; ++zOffset) {
+            for(int ix = coord.coordLoc.getX() - LIQUID_RADIUS; ix <= coord.coordLoc.getX() + LIQUID_RADIUS; ++ix) {
+                for(int iy = coord.coordLoc.getY() - LIQUID_RADIUS; iy <= coord.coordLoc.getY() + LIQUID_RADIUS; ++iy) {
+                    for(int iz = coord.coordLoc.getZ() - LIQUID_RADIUS; iz <= coord.coordLoc.getZ() + LIQUID_RADIUS; ++iz) {
                         Material type = BlockManager.getBlockType(world,
-                                coord.coordLoc.getX() + xOffset,
-                                coord.coordLoc.getY() + yOffset,
-                                coord.coordLoc.getZ() + zOffset);
+                                ix, iy, iz);
                         if(type == Material.WATER || type == Material.LAVA) return true;
                     }
                 }
             }
+
         }
-        //Parent is NOT near liquid - check just a few blocks to ensure still not near liquid
-        //Assumes parent has no coordinate difference of > 1 in x, y, or z
+        // Parent is NOT near liquid - check just a few blocks to ensure still not near liquid
+        // Assumes parent has no coordinate difference of > 1 in x, y, or z
         else {
-            int xDiff = coord.coordLoc.getX() - coord.parent.coordLoc.getX();
-            int yDiff = coord.coordLoc.getY() - coord.parent.coordLoc.getY();
-            int zDiff = coord.coordLoc.getZ() - coord.parent.coordLoc.getZ();
-            //offsets must be greater than radius from parent
-            for(int xOffset = -1 * LIQUID_RADIUS; xOffset <= LIQUID_RADIUS; ++xOffset) {
-                boolean isWithinParentX = Math.abs(xDiff + xOffset) <= LIQUID_RADIUS;
-                for(int yOffset = -1 * LIQUID_RADIUS; yOffset <= LIQUID_RADIUS; ++yOffset) {
-                    boolean isWithinParentY = Math.abs(yDiff + yOffset) <= LIQUID_RADIUS;
-                    for(int zOffset = -1 * LIQUID_RADIUS; zOffset <= LIQUID_RADIUS; ++zOffset) {
-                        boolean isWithinParentZ = Math.abs(zDiff + zOffset) <= LIQUID_RADIUS;
+            // Offsets must be greater than radius from parent
+            for(int ix = coord.coordLoc.getX() - LIQUID_RADIUS; ix <= coord.coordLoc.getX() + LIQUID_RADIUS; ++ix) {
+                boolean isWithinParentX = Math.abs(ix - coord.parent.coordLoc.getX()) <= LIQUID_RADIUS;
+                for(int iy = coord.coordLoc.getY() - LIQUID_RADIUS; iy <= coord.coordLoc.getY() + LIQUID_RADIUS; ++iy) {
+                    boolean isWithinParentY = Math.abs(iy - coord.parent.coordLoc.getY()) <= LIQUID_RADIUS;
+                    for(int iz = coord.coordLoc.getZ() - LIQUID_RADIUS; iz <= coord.coordLoc.getZ() + LIQUID_RADIUS; ++iz) {
+                        boolean isWithinParentZ = Math.abs(iz - coord.parent.coordLoc.getZ()) <= LIQUID_RADIUS;
                         if(isWithinParentX && isWithinParentY && isWithinParentZ) continue;
                         Material type = BlockManager.getBlockType(world,
-                                coord.coordLoc.getX() + xOffset,
-                                coord.coordLoc.getY() + yOffset,
-                                coord.coordLoc.getZ() + zOffset);
+                                ix, iy, iz);
                         if(type == Material.WATER || type == Material.LAVA) return true;
                     }
                 }
             }
+
+
         }
 
         return false;
@@ -275,13 +280,12 @@ public class Greedy extends PathFinder {
         return false;
     }
 
-    //Use RoadCoordinates to avoid use of redundant data found in Bukkit's Location object
+    // Use RoadCoordinates to avoid use of redundant data found in Bukkit's Location object
     private class RoadCoordinate implements Comparable<RoadCoordinate>{
         Coordinate coordLoc;
 
         boolean isNearLiquid = false;
         boolean isNearCliff = false;
-        boolean isAir = false;
 
         double h;
 
@@ -289,18 +293,19 @@ public class Greedy extends PathFinder {
 
         private List<RoadCoordinate> neighbors;
 
-        RoadCoordinate(int x, int y, int z, boolean isAir){
+        RoadCoordinate(int x, int y, int z){
             coordLoc = new Coordinate(x, y, z);
-            this.isAir = isAir;
         }
 
         //Copy constructor
         RoadCoordinate(RoadCoordinate coord){
             coordLoc = new Coordinate(coord.coordLoc.getX(), coord.coordLoc.getY(), coord.coordLoc.getZ());
-            this.isAir = coord.isAir;
         }
 
         List<RoadCoordinate> getNeighbors(Map<Long, RoadCoordinate> coordMap){
+
+            long startTime = System.nanoTime();
+
             if(neighbors != null) return neighbors;
             List<RoadCoordinate> neighbors = new ArrayList<RoadCoordinate>();
 
@@ -314,8 +319,10 @@ public class Greedy extends PathFinder {
             RoadCoordinate negZ = getOrCreateCoordinateIncline(coordLoc.getX(), coordLoc.getY(), coordLoc.getZ() - 1, coordMap);
             if(negZ != null) neighbors.add(negZ);
 
-
             this.neighbors = neighbors;
+
+            neighborNS += System.nanoTime() - startTime;
+
             return this.neighbors;
         }
 
@@ -350,7 +357,7 @@ public class Greedy extends PathFinder {
 
         if(currentCoord == null) {
             if(isValidSolidCoordinate(x, y, z)) {
-                currentCoord = new RoadCoordinate(x, y, z, false);
+                currentCoord = new RoadCoordinate(x, y, z);
                 coordMap.put(currentLong, currentCoord);
             }
         }
@@ -389,6 +396,7 @@ public class Greedy extends PathFinder {
     private Coordinate longToCoordinate(long l) {
         return new Coordinate((int)(l >> 38), (int)(l << 26 >> 52), (int)(l << 38 >> 38));
     }
+
 
     private enum PathBuildStage {
         SEARCH, BACKTRACE, ERROR, SUCCESS;
