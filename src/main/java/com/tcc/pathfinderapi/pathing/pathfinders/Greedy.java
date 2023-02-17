@@ -1,17 +1,12 @@
 package com.tcc.pathfinderapi.pathing.pathfinders;
 
-import com.tcc.pathfinderapi.PathFinderAPI;
-import com.tcc.pathfinderapi.errorHandling.PathException;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import com.tcc.pathfinderapi.pathing.*;
 import org.bukkit.*;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 public class Greedy extends PathFinder {
@@ -36,27 +31,34 @@ public class Greedy extends PathFinder {
 
     // Configuration variables
     private final double LIQUID_PENALTY = 20;
-    private final int LIQUID_RADIUS = 2;
+    private final int LIQUID_RADIUS;
     private final double CLIFF_PENALTY = 20;
-    private final int CLIFF_RADIUS = 2;
+    private final int CLIFF_RADIUS;
+
 
     // Performance variables
     private long neighborNS = 0;
     private long heuristicNS = 0;
 
-    public Greedy(Location start, Location end){
-        super(start, end);
+
+    public Greedy(GreedyBuilder builder){
+        super(builder);
 
         // Check start and end in same world
         // Note: This is temporary until we get multi-world support
-        if(!checkSameWorld(start, end)) throw new RuntimeException("Start and end locations not in same world!");
+        if(!checkSameWorld(builder.getStart(), builder.getEnd())) throw new RuntimeException("Start and end locations not in same world!");
 
-        this.world = start.getWorld();
-        //Start and end swapped so path is generated from start to end (due to backtracing)
-        this.start = new RoadCoordinate(start.getBlockX(), start.getBlockY(), start.getBlockZ());
-        this.end = new RoadCoordinate(end.getBlockX(), end.getBlockY(), end.getBlockZ());
+        // Set configuration variables
+        this.LIQUID_RADIUS = builder.LIQUID_RADIUS;
+        this.CLIFF_RADIUS = builder.CLIFF_RADIUS;
+        // TODO: ADD BLOCK LIMIT
 
-        //Pathing variables
+        this.world = builder.getStart().getWorld();
+        // Start and end swapped so path is generated from start to end (due to backtracing)
+        this.start = new RoadCoordinate(builder.getStart().getBlockX(), builder.getStart().getBlockY(), builder.getStart().getBlockZ());
+        this.end = new RoadCoordinate(builder.getEnd().getBlockX(), builder.getEnd().getBlockY(), builder.getEnd().getBlockZ());
+
+        // Pathing variables
         closedList = new PriorityQueue<RoadCoordinate>();
         openList = new PriorityQueue<RoadCoordinate>();
         masterList = new HashMap<Long, RoadCoordinate>();
@@ -64,7 +66,29 @@ public class Greedy extends PathFinder {
         masterList.put(coordinateToLong(this.end.coordLoc), this.end);
         this.start.h = heuristicDistance(this.end);
         openList.add(this.start);
+    }
 
+    /**
+     * Obtain a new {@link GreedyBuilder GreedyBuilder}
+     * @param start
+     * @param end
+     * @return
+     */
+    public static GreedyBuilder getBuilder(Location start, Location end){
+        return new GreedyBuilder(start, end);
+    }
+
+
+    /**
+     * Obtain a new {@link GreedyBuilder GreedyBuilder} using current instance
+     * @return
+     */
+    @Override
+    public PathBuilder toBuilder() {
+        return new GreedyBuilder(super.getStart(), super.getEnd())
+                .setCliffRadius(CLIFF_RADIUS)
+                .setLiquidRadius(LIQUID_RADIUS);
+        // TODO: ADD LIMITS
     }
 
     @Override
@@ -96,6 +120,8 @@ public class Greedy extends PathFinder {
         response.addMetaData("error_message", "Path could not be found");
         return response;
     }
+
+
 
     private boolean stepSearch() {
 
@@ -149,17 +175,10 @@ public class Greedy extends PathFinder {
     }
 
     private boolean stepBacktrace() {
-        final int OPTIMIZATION_SEGMENT_LENGTH = 40;
+
         if(!currentBackTraceNode.equals(start)) {
 
-
             fullPath.addFirst(currentBackTraceNode.coordLoc);
-
-            //TODO: Optimize path length
-
-
-
-
 
             currentBackTraceNode = currentBackTraceNode.parent;
             return false;
@@ -168,9 +187,6 @@ public class Greedy extends PathFinder {
             //Add start location
             fullPath.addFirst(currentBackTraceNode.coordLoc);
 
-            //TODO: Optimize path length one last time
-
-
             PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cBacktracing complete! Path length: " + fullPath.size()));
 
             currentStage = PathBuildStage.SUCCESS;
@@ -178,6 +194,8 @@ public class Greedy extends PathFinder {
             return true;
         }
     }
+
+
 
     /*
      * PRIVATE HELPER FUNCTIONS...
@@ -395,6 +413,33 @@ public class Greedy extends PathFinder {
 
     private Coordinate longToCoordinate(long l) {
         return new Coordinate((int)(l >> 38), (int)(l << 26 >> 52), (int)(l << 38 >> 38));
+    }
+
+    public static class GreedyBuilder extends PathBuilder {
+        // Optional Greedy variables
+        private int LIQUID_RADIUS = 2;
+        private int CLIFF_RADIUS = 2;
+
+
+        public GreedyBuilder(Location start, Location end){
+            super(start, end);
+        }
+
+        public GreedyBuilder setLiquidRadius(int radius){
+            this.LIQUID_RADIUS = radius;
+            return this;
+        }
+
+        public GreedyBuilder setCliffRadius(int radius){
+            this.CLIFF_RADIUS = radius;
+            return this;
+        }
+
+
+        @Override
+        public Greedy build(){
+            return new Greedy(this);
+        }
     }
 
 

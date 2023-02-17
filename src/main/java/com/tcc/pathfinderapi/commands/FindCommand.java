@@ -42,7 +42,7 @@ public class FindCommand {
                             Location end = context.get("end");
 
                             long startTime = System.currentTimeMillis();
-                            CompletableFuture<List<Coordinate>> pathFuture = new Greedy(start, end).run().getPath();
+                            CompletableFuture<List<Coordinate>> pathFuture = Greedy.getBuilder(start, end).build().run().getPath();
 
                             // Run this code whether or not a path is found successfully
                             pathFuture.whenComplete((myInt, err) -> {
