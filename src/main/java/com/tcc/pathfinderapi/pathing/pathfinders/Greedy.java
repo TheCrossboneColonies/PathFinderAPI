@@ -36,6 +36,7 @@ public class Greedy extends PathFinder {
     private final int CLIFF_RADIUS;
 
 
+
     // Performance variables
     private long neighborNS = 0;
     private long heuristicNS = 0;
@@ -51,7 +52,6 @@ public class Greedy extends PathFinder {
         // Set configuration variables
         this.LIQUID_RADIUS = builder.LIQUID_RADIUS;
         this.CLIFF_RADIUS = builder.CLIFF_RADIUS;
-        // TODO: ADD BLOCK LIMIT
 
         this.world = builder.getStart().getWorld();
         // Start and end swapped so path is generated from start to end (due to backtracing)
@@ -176,6 +176,13 @@ public class Greedy extends PathFinder {
 
     private boolean stepBacktrace() {
 
+        // Check max path length
+        if(fullPath.size() > getMaxPathLength()){
+            currentStage = PathBuildStage.ERROR;
+            return true;
+        }
+
+        // Continue backtrace
         if(!currentBackTraceNode.equals(start)) {
 
             fullPath.addFirst(currentBackTraceNode.coordLoc);
