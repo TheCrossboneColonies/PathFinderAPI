@@ -7,7 +7,7 @@ public abstract class PathBuilder {
 
     private Location start;
     private Location end;
-    private int maxPathLength = -1;
+    private int maxPathLength = Integer.MAX_VALUE;
 
     public PathBuilder(Location start, Location end){
         this.start = start;
@@ -26,7 +26,7 @@ public abstract class PathBuilder {
 
     /**
      *
-     * @param maxPathLength - parameter that tells pathfinder when to give up searching. Default: -1 (No path length limit)
+     * @param maxPathLength - parameter that tells pathfinder when to give up searching. Default: INTEGER.MAX_VALUE (No path length limit)
      * @return
      */
     public PathBuilder setMaxPathLength(int maxPathLength){

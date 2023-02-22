@@ -5,11 +5,10 @@ import com.tcc.pathfinderapi.pathing.PathFinder;
 import com.tcc.pathfinderapi.pathing.PathStepResponse;
 import com.tcc.pathfinderapi.pathing.PathStepResult;
 import org.bukkit.Location;
+import org.bukkit.World;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 public class WindowOptimizer implements PathOptimizer {
@@ -27,18 +26,20 @@ public class WindowOptimizer implements PathOptimizer {
     /**
      * Sorted list of indices in fullPath representing changes in direction
      */
-    private List<Integer> inflectionPoints = new LinkedList<>();
+    private List<Integer> inflectionPoints = new ArrayList<>();
 
     /**
      * Original path that should be optimized
      */
-    private List<Coordinate> fullPath;
+    private LinkedList<Coordinate> fullPath;
+    private World world;
     private int currentBlockOffset;
 
     private PathFinder pathFinder;
 
-    public WindowOptimizer(List<Coordinate> fullPath, PathFinder pathFinder){
+    public WindowOptimizer(LinkedList<Coordinate> fullPath, World world, PathFinder pathFinder){
         this.fullPath = fullPath;
+        this.world = world;
         this.pathFinder = pathFinder;
         currentBlockOffset = INITIAL_BLOCK_OFFSET;
 
@@ -57,7 +58,7 @@ public class WindowOptimizer implements PathOptimizer {
         }
 
         // TODO: If LinkedList implementation is chosen, should probably use iterators
-        // FINAL THOUGHTS - Use ArrayList, check effectiveness, and then decide whether more time should be spent making it efficient
+
         // Sliding window to find mini paths
         while(currentBlockOffset > 3){ // Offset of 3 indicates a sub-path length of 3. There is no way to optimize a 3 block long path to become shorter, so this is the lower-bound
 
@@ -74,9 +75,21 @@ public class WindowOptimizer implements PathOptimizer {
             while(upperIndex != -1){
                 int maxPathLength = upperIndex - lowerIndex - 1;
 
-                // TODO: Attempt to find shorter path between locations
+                // Attempt to find shorter path between locations
+                Coordinate startCoord = fullPath.get(lowerIndex);
+                Location start = new Location(world, startCoord.getX(), startCoord.getY(), startCoord.getZ());
+                Coordinate endCoord = fullPath.get(upperIndex - 1); // Pathfinder is inclusive for destination, so do a -1.
+                Location end = new Location(world, endCoord.getX(), endCoord.getY(), endCoord.getZ());
+                List<Coordinate> shorterSubPath = findPath(start, end, maxPathLength);
 
-                // TODO: If shorter path found, update fullPath and update inflectionPoints within range
+                // If shorter path found, update fullPath and update inflectionPoints within range
+                if(shorterSubPath != null){
+                    // Direct access to sublist
+                    List<Coordinate> subList = fullPath.subList(lowerIndex, upperIndex);
+                    subList.clear();
+                    subList.addAll(shorterSubPath);
+                    updateInflectionPoints(lowerIndex, upperIndex);
+                }
 
                 ++firstInflectionIndex;
             }
@@ -140,11 +153,60 @@ public class WindowOptimizer implements PathOptimizer {
         // Always include start
         inflectionPoints.add(lowerIndex);
 
-        int initialRise = 0; // Track initial change in z
-        int initialRun = 0; // Track initial change in x
-        int riseCounter = 0; // Track current change in z
-        int runCounter = 0; // Track current change in x
+        // Initialize slope variables
+        int prevRise = 0; // Track initial change in z
+        int prevRun = 0; // Track initial change in x
+        int currRise = 0;
+        int currRun = 0;
+        // Track previous direction to find corners
+        boolean lastChangeX = false;
 
+        // Create iterator (more efficient for LinkedList than .get())
+        Iterator<Coordinate> it = fullPath.listIterator(lowerIndex);
+        Coordinate prev = it.next();
+        for(; lowerIndex < upperIndex; ++lowerIndex){
+            Coordinate curr = it.next();
+
+            if(curr.getX() - prev.getX() == 0){ // If changing in z direction
+                // Found corner
+                if(lastChangeX){
+                    // Check for slope change (rise / run)
+                    if(currRise != prevRise || currRun != prevRun){
+                        // Found inflection point
+                        inflectionPoints.add(lowerIndex - currRun - 1);
+
+                        prevRise = currRise;
+
+                        // Reset
+                        currRise = 0;
+                    }
+                }
+
+                lastChangeX = false;
+                ++currRise;
+            }
+
+            if(curr.getZ() - prev.getZ() == 0){ // If changing in x direction
+                // Found corner
+                if(!lastChangeX){
+                    // Check for slope change (rise / run)
+                    if(currRise != prevRise || currRun != prevRun){
+                        // Found inflection point
+                        inflectionPoints.add(lowerIndex - currRise - 1);
+
+                        prevRun = currRun;
+
+                        // Reset
+                        currRun = 0;
+                    }
+                }
+
+                lastChangeX = true;
+                ++currRun;
+            }
+
+            prev = curr;
+        }
 
         // Always include end
         inflectionPoints.add(upperIndex - 1);
