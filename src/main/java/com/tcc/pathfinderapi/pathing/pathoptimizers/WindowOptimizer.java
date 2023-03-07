@@ -23,10 +23,6 @@ public class WindowOptimizer implements PathOptimizer {
      */
     private final float MULTIPLIER = 0.8F;
 
-    /**
-     * Sorted list of indices in fullPath representing changes in direction
-     */
-    private List<Integer> inflectionPoints = new ArrayList<>();
 
     /**
      * Original path that should be optimized
@@ -42,56 +38,47 @@ public class WindowOptimizer implements PathOptimizer {
         this.world = world;
         this.pathFinder = pathFinder;
         currentBlockOffset = INITIAL_BLOCK_OFFSET;
-
-        // Initialize inflection points
-        updateInflectionPoints(0, fullPath.size());
     }
 
     @Override
     public PathStepResponse stepOptimize() {
 
-        // Inflection point check
-        if(inflectionPoints.size() == 0) {
-            PathStepResponse response = new PathStepResponse(PathStepResult.ERROR);
-            response.addMetaData("error_message", "Inflection points not initialized! Length is 0.");
-            return response;
-        }
-
-        // TODO: If LinkedList implementation is chosen, should probably use iterators
-
         // Sliding window to find mini paths
         while(currentBlockOffset > 3){ // Offset of 3 indicates a sub-path length of 3. There is no way to optimize a 3 block long path to become shorter, so this is the lower-bound
 
             // Index in inflectionPoints corresponding to start of current window
-            int firstInflectionIndex = 0;
-
-            // Index in fullPath corresponding to Coordinate of start (inclusive) of current window
-            int lowerIndex = inflectionPoints.get(firstInflectionIndex);
-
-            // Index in fullPath corresponding to Coordinate of end (exclusive) of current window
-            int upperIndex = getUpperIndex(lowerIndex + currentBlockOffset + 1);
+            int firstWindowIndex = 0;
 
             // While another valid window of size exists
-            while(upperIndex != -1){
-                int maxPathLength = upperIndex - lowerIndex - 1;
+            while(firstWindowIndex < fullPath.size() - 1){
+                int lastWindowIndex = firstWindowIndex + Math.min(firstWindowIndex + currentBlockOffset, fullPath.size());
+                int maxPathLength = lastWindowIndex - firstWindowIndex - 1;
+
+                // Find most promising locations to path between
+                int[] coordIndices = getBestPair(firstWindowIndex, lastWindowIndex);
+                if(coordIndices == null) {
+                    firstWindowIndex += currentBlockOffset / 2;
+                    continue;
+                }
+                int startCoordIndex = coordIndices[0];
+                int endCoordIndex = coordIndices[1];
 
                 // Attempt to find shorter path between locations
-                Coordinate startCoord = fullPath.get(lowerIndex);
+                Coordinate startCoord = fullPath.get(startCoordIndex);
                 Location start = new Location(world, startCoord.getX(), startCoord.getY(), startCoord.getZ());
-                Coordinate endCoord = fullPath.get(upperIndex - 1); // Pathfinder is inclusive for destination, so do a -1.
+                Coordinate endCoord = fullPath.get(endCoordIndex - 1); // Pathfinder is inclusive for destination, so do a -1.
                 Location end = new Location(world, endCoord.getX(), endCoord.getY(), endCoord.getZ());
                 List<Coordinate> shorterSubPath = findPath(start, end, maxPathLength);
 
                 // If shorter path found, update fullPath and update inflectionPoints within range
                 if(shorterSubPath != null){
                     // Direct access to sublist
-                    List<Coordinate> subList = fullPath.subList(lowerIndex, upperIndex);
+                    List<Coordinate> subList = fullPath.subList(startCoordIndex, endCoordIndex);
                     subList.clear();
                     subList.addAll(shorterSubPath);
-                    updateInflectionPoints(lowerIndex, upperIndex);
                 }
 
-                ++firstInflectionIndex;
+                firstWindowIndex += currentBlockOffset / 2;
             }
             currentBlockOffset *= MULTIPLIER;
         }
@@ -117,102 +104,45 @@ public class WindowOptimizer implements PathOptimizer {
     }
 
     /**
-     * Updates inflection points within the fullPath indices
+     *
      * @param lowerIndex
      * @param upperIndex
+     * @return null if no matches
      */
-    private void updateInflectionPoints(int lowerIndex, int upperIndex){
-
-        // Find new inflection points in fullPath
-        List<Integer> newInflectionPoints = getInflectionPoints(lowerIndex, upperIndex);
-
-        int lowerInflectionIndex = inflectionPoints.indexOf(lowerIndex);
-
-        // Remove old inflection points between bounds
-        inflectionPoints.removeIf((value) -> value >= lowerIndex && value < upperIndex);
-
-        //Add new inflection points
-        inflectionPoints.addAll(lowerInflectionIndex, newInflectionPoints);
-
-        // TODO: Assuming the above is implemented correctly, the list is already sorted! Test and remove this extra sorting
-        // TODO: Should inflectionPoints become a LinkedList??
-        // Resort the list
-        Collections.sort(inflectionPoints);
-    }
-
-    /**
-     * Retrieves inflection points given the current state of fullPath between the specified indices.
-     * @param lowerIndex
-     * @param upperIndex
-     * @return sorted list of inflection points
-     */
-    private List<Integer> getInflectionPoints(int lowerIndex, int upperIndex){
-
-        List<Integer> inflectionPoints = new ArrayList<>();
-
-        // Always include start
-        inflectionPoints.add(lowerIndex);
-
-        // Initialize slope variables
-        int prevRise = 0; // Track initial change in z
-        int prevRun = 0; // Track initial change in x
-        int currRise = 0;
-        int currRun = 0;
-        // Track previous direction to find corners
-        boolean lastChangeX = false;
-
-        // Create iterator (more efficient for LinkedList than .get())
+    private int[] getBestPair(int lowerIndex, int upperIndex){
         Iterator<Coordinate> it = fullPath.listIterator(lowerIndex);
-        Coordinate prev = it.next();
+
+        // Rename upperIndex to upperLimit
+        int upperLimit = upperIndex;
+
+        int[] bestMatch = null;
+        int bestScore = (int) (0.1 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
+
         for(; lowerIndex < upperIndex; ++lowerIndex){
-            Coordinate curr = it.next();
+            Coordinate prev = it.next();
+            upperIndex = lowerIndex + 1;
+            Iterator<Coordinate> upperIt = fullPath.listIterator(upperIndex);
+            for(; upperIndex < upperLimit; ++upperIndex){
+                Coordinate next = upperIt.next();
 
-            if(curr.getX() - prev.getX() == 0){ // If changing in z direction
-                // Found corner
-                if(lastChangeX){
-                    // Check for slope change (rise / run)
-                    if(currRise != prevRise || currRun != prevRun){
-                        // Found inflection point
-                        inflectionPoints.add(lowerIndex - currRun - 1);
+                // Calculate score
+                int actualDistance = Math.abs(prev.getX() - next.getX()) + Math.abs(prev.getZ() - next.getZ()); // manhatten
+                int pathDistance = upperIndex - lowerIndex;
+                int score = pathDistance - actualDistance;
 
-                        prevRise = currRise;
-
-                        // Reset
-                        currRise = 0;
-                    }
+                if(score > bestScore){
+                    bestScore = score;
+                    bestMatch = new int[]{lowerIndex, upperIndex};
                 }
-
-                lastChangeX = false;
-                ++currRise;
             }
-
-            if(curr.getZ() - prev.getZ() == 0){ // If changing in x direction
-                // Found corner
-                if(!lastChangeX){
-                    // Check for slope change (rise / run)
-                    if(currRise != prevRise || currRun != prevRun){
-                        // Found inflection point
-                        inflectionPoints.add(lowerIndex - currRise - 1);
-
-                        prevRun = currRun;
-
-                        // Reset
-                        currRun = 0;
-                    }
-                }
-
-                lastChangeX = true;
-                ++currRun;
-            }
-
-            prev = curr;
         }
 
-        // Always include end
-        inflectionPoints.add(upperIndex - 1);
-
-        return inflectionPoints;
+        return bestMatch;
     }
+
+
+
+
 
     /**
      * Optimizes the section of path from lowerIndex (inclusive) to upperIndex (exclusive)
@@ -227,26 +157,4 @@ public class WindowOptimizer implements PathOptimizer {
         return -1;
     }
 
-    /**
-     * Finds index of largest number less than value in sorted inflection point list. If none exists, returns -1
-     * @param value
-     * @return
-     */
-    private int getUpperIndex(int value){
-        int left = 0;
-        int right = inflectionPoints.size() - 1;
-        int result = -1;
-        while(left <= right){
-            int mid = left + (right - left) / 2;
-            if(inflectionPoints.get(mid) < value){
-                result = mid;
-                left = mid + 1;
-            }
-            else {
-                right = mid - 1;
-            }
-        }
-        if(result != -1) return inflectionPoints.get(result);
-        return result;
-    }
 }
