@@ -6,8 +6,10 @@ import cloud.commandframework.bukkit.parsers.location.LocationArgument;
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
+import com.tcc.pathfinderapi.pathing.PathFinder;
 import com.tcc.pathfinderapi.pathing.PathNode;
 import com.tcc.pathfinderapi.pathing.pathfinders.Greedy;
+import com.tcc.pathfinderapi.pathing.pathoptimizers.WindowOptimizer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,10 +17,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class FindCommand {
@@ -45,7 +44,8 @@ public class FindCommand {
                             Location end = context.get("end");
 
                             long startTime = System.currentTimeMillis();
-                            CompletableFuture<List<Coordinate>> pathFuture = Greedy.getBuilder(start, end).build().run().getPath();
+                            PathFinder pathFinder = Greedy.getBuilder(start, end).build();
+                            CompletableFuture<List<Coordinate>> pathFuture = pathFinder.run().getPath();
 
                             // Run this code whether or not a path is found successfully
                             pathFuture.whenComplete((myInt, err) -> {
@@ -57,27 +57,56 @@ public class FindCommand {
                             // Run this code if a path is found successfully
                             .thenAccept(list -> {
                                 PathAPIMessager.info("Path of length " + list.size() + " found in " + (System.currentTimeMillis() - startTime) + " ms");
+                                PathAPIMessager.debug("Optimizing path... ");
+                                LinkedList<Coordinate> path = new LinkedList<>(list);
+                                WindowOptimizer optimizer = new WindowOptimizer(path, player.getWorld(), pathFinder);
+                                PathAPIMessager.debug("Initial length: " + path.size());
+                                optimizer.stepOptimize();
+
+                                PathAPIMessager.debug("Final length: " + path.size());
                                 // Perform console testPath
 //                                initTestPath();
 //                                int[] bestPair1 = getBestPair(testPath, 0, testPath.size());
 //                                if(bestPair1 == null) PathAPIMessager.debug("No optimizations found");
-//                                else printBestPoints(bestPair1);
+//                                else {
+//                                    printBestPoints(bestPair1);
+//                                    int startCoordIndex = bestPair1[0];
+//                                    int endCoordIndex = bestPair1[1];
+//                                    PathAPIMessager.debug("Start: " + startCoordIndex + " End: " + endCoordIndex);
+//                                    List<Coordinate> shorterPath = new ArrayList<Coordinate>();
+//
+//                                    for(int i = 2; i <= 7; ++i){
+//                                        Coordinate coordinate = new Coordinate(0, 0, i);
+//                                        shorterPath.add(coordinate);
+//                                    }
+//                                    List<Coordinate> subList = testPath.subList(startCoordIndex, endCoordIndex);
+//                                    subList.clear();
+//                                    subList.addAll(shorterPath);
+//                                    PathAPIMessager.debug("New path: " + testPath);
+//                                    printMap(getDefaultMap());
+//                                }
+
+
+
 
                                 // Run in main thread
 //                                new BukkitRunnable() {
 //
 //                                    @Override
 //                                    public void run() {
-//                                        for(Coordinate coord : list){
+//
+//                                        // Optimized is in gold
+//                                        for(Coordinate coord : path){
 //                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
 //                                            loc.getBlock().setType(Material.GOLD_BLOCK);
 //                                        }
 //
-//                                        for(Integer index : getInflectionPoints(list, 0, list.size())){
-//                                            Coordinate coord = list.get(index);
-//                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-//                                            loc.getBlock().setType(Material.STONE);
-//                                        }
+////                                        for(Coordinate coord : list){
+////                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+////                                            loc.getBlock().setType(Material.STONE);
+////                                        }
+//
+//
 //                                    }
 //                                }.runTask(plugin);
 //
@@ -85,10 +114,17 @@ public class FindCommand {
 //                                new BukkitRunnable() {
 //                                    @Override
 //                                    public void run() {
-//                                        for(Coordinate coord : list){
+////                                        for(Coordinate coord : list){
+////                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+////                                            loc.getBlock().setType(Material.STONE);
+////                                        }
+//
+//                                        // Optimized
+//                                        for(Coordinate coord : path){
 //                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
 //                                            loc.getBlock().setType(Material.STONE);
 //                                        }
+//
 //                                    }
 //                                }.runTaskLater(plugin, 200L);
 
@@ -98,6 +134,39 @@ public class FindCommand {
 
                         })
         );
+    }
+
+    private int[] getBestPair(List<Coordinate> fullPath, int lowerIndex, int upperIndex){
+        Iterator<Coordinate> it = fullPath.listIterator(lowerIndex);
+
+        // Rename upperIndex to upperLimit
+        int upperLimit = upperIndex;
+
+        int[] bestMatch = null;
+        int bestScore = (int) (0.1 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
+        int bestPathDistance = Integer.MAX_VALUE;
+
+        for(; lowerIndex < upperIndex; ++lowerIndex){
+            Coordinate prev = it.next();
+            upperIndex = lowerIndex + 1;
+            Iterator<Coordinate> upperIt = fullPath.listIterator(upperIndex);
+            for(; upperIndex < upperLimit; ++upperIndex){
+                Coordinate next = upperIt.next();
+
+                // Calculate score
+                int actualDistance = Math.abs(prev.getX() - next.getX()) + Math.abs(prev.getZ() - next.getZ()); // manhatten
+                int pathDistance = upperIndex - lowerIndex;
+                int score = pathDistance - actualDistance;
+
+                if(score > bestScore || (score == bestScore && pathDistance < bestPathDistance)){
+                    bestScore = score;
+                    bestMatch = new int[]{lowerIndex, upperIndex};
+                    bestPathDistance = pathDistance;
+                }
+            }
+        }
+
+        return bestMatch;
     }
 
     private void printBestPoints(int[] bestPair) {
@@ -120,40 +189,23 @@ public class FindCommand {
         testPath.clear();
         // x, z pairs
         int[][] coordInts = {
-//                { 0, 0 },
-//                { 0, 1 },
-//                { 0, 2 },
-//                { 1, 2 },
-//                { 1, 3 },
-//                { 2, 3 },
-//                { 2, 4 },
-//                { 3, 4 },
-//                { 3, 5 },
-//                { 3, 6 },
-//                { 2, 6 },
-//                { 2, 7 },
-//                { 1, 7 },
-//                { 1, 8 },
-//                { 0, 8 },
-//                { 0, 9 },
-//                { 0, 10 },
                 { 0, 0 },
                 { 0, 1 },
                 { 0, 2 },
-                { 0, 3 },
+                { 1, 2 },
                 { 1, 3 },
-                { 1, 4 },
+                { 2, 3 },
                 { 2, 4 },
-                { 2, 5 },
+                { 3, 4 },
                 { 3, 5 },
-                { 4, 5 },
-                { 4, 6 },
-                { 5, 6 },
-                { 5, 7 },
-                { 6, 7 },
-                { 6, 8 },
-                { 6, 9 },
-                { 6, 10 },
+                { 3, 6 },
+                { 2, 6 },
+                { 2, 7 },
+                { 1, 7 },
+                { 1, 8 },
+                { 0, 8 },
+                { 0, 9 },
+                { 0, 10 },
         };
 
         for(int[] coordInt : coordInts){
@@ -190,43 +242,6 @@ public class FindCommand {
         }
     }
 
-//    /**
-//     *
-//     * @param fullPath
-//     * @param lowerIndex
-//     * @param upperIndex
-//     * @return null if no matches
-//     */
-//    private int[] getBestPair(List<Coordinate> fullPath, int lowerIndex, int upperIndex){
-//        Iterator<Coordinate> it = fullPath.listIterator(lowerIndex);
-//
-//        // Rename upperIndex to upperLimit
-//        int upperLimit = upperIndex;
-//
-//        int[] bestMatch = null;
-//        int bestScore = (int) (0.1 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
-//
-//        for(; lowerIndex < upperIndex; ++lowerIndex){
-//            Coordinate prev = it.next();
-//            upperIndex = lowerIndex + 1;
-//            Iterator<Coordinate> upperIt = fullPath.listIterator(upperIndex);
-//            for(; upperIndex < upperLimit; ++upperIndex){
-//                Coordinate next = upperIt.next();
-//
-//                // Calculate score
-//                int actualDistance = Math.abs(prev.getX() - next.getX()) + Math.abs(prev.getZ() - next.getZ()); // manhatten
-//                int pathDistance = upperIndex - lowerIndex;
-//                int score = pathDistance - actualDistance;
-//
-//                if(score > bestScore){
-//                    bestScore = score;
-//                    bestMatch = new int[]{lowerIndex, upperIndex};
-//                }
-//            }
-//        }
-//
-//        return bestMatch;
-//    }
 
 
 

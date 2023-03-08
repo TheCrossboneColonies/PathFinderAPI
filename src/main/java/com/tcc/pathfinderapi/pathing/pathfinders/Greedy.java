@@ -37,10 +37,6 @@ public class Greedy extends PathFinder {
 
 
 
-    // Performance variables
-    private long neighborNS = 0;
-    private long heuristicNS = 0;
-
 
     public Greedy(GreedyBuilder builder){
         super(builder);
@@ -110,9 +106,6 @@ public class Greedy extends PathFinder {
         else if(currentStage == PathBuildStage.SUCCESS) {
             PathStepResponse response = new PathStepResponse(PathStepResult.SUCCESS);
             response.addMetaData("path", fullPath);
-            // TODO: REMOVE
-            PathAPIMessager.debug("Greedy neighbor ms: " + (neighborNS / 1000));
-            PathAPIMessager.debug("Greedy heuristic ms: " + (heuristicNS / 1000));
             return response;
         }
 
@@ -126,7 +119,7 @@ public class Greedy extends PathFinder {
     private boolean stepSearch() {
 
         if(openList.isEmpty()) {
-            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Open list empty"));
+            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Open list empty"));
             currentStage = PathBuildStage.ERROR;
             return true; //Error, no path found
         }
@@ -140,7 +133,7 @@ public class Greedy extends PathFinder {
 
         //Check if step count has surpassed the limit
         if(!keepSearchingCheck.test(stepCount)) {
-            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Too many steps taken"));
+            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Too many steps taken"));
             currentStage = PathBuildStage.ERROR;
             return true; //Error, no path found
         }
@@ -149,8 +142,8 @@ public class Greedy extends PathFinder {
         RoadCoordinate n = openList.peek();
 
         if(n == end){
-            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&aPath found! Backtracing started." +
-                    " Path search time: " + (System.currentTimeMillis() - startSearchTime) + " ms"));
+            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&aPath found! Backtracing started." +
+           //         " Path search time: " + (System.currentTimeMillis() - startSearchTime) + " ms"));
             currentBackTraceNode = end;
             currentStage = PathBuildStage.BACKTRACE;
 
@@ -194,7 +187,7 @@ public class Greedy extends PathFinder {
             //Add start location
             fullPath.addFirst(currentBackTraceNode.coordLoc);
 
-            PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cBacktracing complete! Path length: " + fullPath.size()));
+            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cBacktracing complete! Path length: " + fullPath.size()));
 
             currentStage = PathBuildStage.SUCCESS;
 
@@ -216,8 +209,6 @@ public class Greedy extends PathFinder {
      */
     private double heuristicDistance(RoadCoordinate currentLoc) {
 
-        long startTime = System.nanoTime();
-
         double weight = currentLoc.coordLoc.distance(end.coordLoc);
 
         //Give punishment for water
@@ -231,8 +222,6 @@ public class Greedy extends PathFinder {
         if(currentLoc.isNearCliff) {
             weight += CLIFF_PENALTY;
         }
-
-        heuristicNS += System.nanoTime() - startTime;
 
         return  weight;
     }
@@ -329,10 +318,8 @@ public class Greedy extends PathFinder {
 
         List<RoadCoordinate> getNeighbors(Map<Long, RoadCoordinate> coordMap){
 
-            long startTime = System.nanoTime();
-
             if(neighbors != null) return neighbors;
-            List<RoadCoordinate> neighbors = new ArrayList<RoadCoordinate>();
+            List<RoadCoordinate> neighbors = new ArrayList<>();
 
             //Get neighbors top down
             RoadCoordinate posX = getOrCreateCoordinateIncline(coordLoc.getX() + 1, coordLoc.getY(), coordLoc.getZ(), coordMap);
@@ -345,8 +332,6 @@ public class Greedy extends PathFinder {
             if(negZ != null) neighbors.add(negZ);
 
             this.neighbors = neighbors;
-
-            neighborNS += System.nanoTime() - startTime;
 
             return this.neighbors;
         }

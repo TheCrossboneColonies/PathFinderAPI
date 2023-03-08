@@ -1,5 +1,6 @@
 package com.tcc.pathfinderapi.pathing.pathoptimizers;
 
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import com.tcc.pathfinderapi.pathing.PathFinder;
 import com.tcc.pathfinderapi.pathing.PathStepResponse;
@@ -7,6 +8,7 @@ import com.tcc.pathfinderapi.pathing.PathStepResult;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import javax.annotation.processing.Messager;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -40,8 +42,14 @@ public class WindowOptimizer implements PathOptimizer {
         currentBlockOffset = INITIAL_BLOCK_OFFSET;
     }
 
+    /**
+     * In its current state, performs all optimizations in a single pass. Do NOT call this synchronously
+     * @return
+     */
     @Override
     public PathStepResponse stepOptimize() {
+
+        long startTime = System.currentTimeMillis();
 
         // Sliding window to find mini paths
         while(currentBlockOffset > 3){ // Offset of 3 indicates a sub-path length of 3. There is no way to optimize a 3 block long path to become shorter, so this is the lower-bound
@@ -49,10 +57,14 @@ public class WindowOptimizer implements PathOptimizer {
             // Index in inflectionPoints corresponding to start of current window
             int firstWindowIndex = 0;
 
+            PathAPIMessager.debug("NEW WINDOW LENGTH: " + currentBlockOffset);
+
+            // TODO: REMOVE
+            int initialLength = fullPath.size();
+
             // While another valid window of size exists
             while(firstWindowIndex < fullPath.size() - 1){
-                int lastWindowIndex = firstWindowIndex + Math.min(firstWindowIndex + currentBlockOffset, fullPath.size());
-                int maxPathLength = lastWindowIndex - firstWindowIndex - 1;
+                int lastWindowIndex = Math.min(firstWindowIndex + currentBlockOffset, fullPath.size());
 
                 // Find most promising locations to path between
                 int[] coordIndices = getBestPair(firstWindowIndex, lastWindowIndex);
@@ -62,6 +74,7 @@ public class WindowOptimizer implements PathOptimizer {
                 }
                 int startCoordIndex = coordIndices[0];
                 int endCoordIndex = coordIndices[1];
+                int maxPathLength = endCoordIndex - startCoordIndex - 1;
 
                 // Attempt to find shorter path between locations
                 Coordinate startCoord = fullPath.get(startCoordIndex);
@@ -80,8 +93,13 @@ public class WindowOptimizer implements PathOptimizer {
 
                 firstWindowIndex += currentBlockOffset / 2;
             }
+
+            PathAPIMessager.debug("Window length: " + currentBlockOffset + ", Removed " + (initialLength - fullPath.size()) + " blocks");
+
             currentBlockOffset *= MULTIPLIER;
         }
+
+        PathAPIMessager.debug("Optimized in " + (System.currentTimeMillis() - startTime) + " ms");
 
         return null;
     }
@@ -96,7 +114,10 @@ public class WindowOptimizer implements PathOptimizer {
     private List<Coordinate> findPath(Location loc1, Location loc2, int maxPathLength){
         try {
             return pathFinder.toBuilder()
-                    .setMaxPathLength(maxPathLength).build().run().getPath().get();
+                    .setMaxPathLength(maxPathLength)
+                    .setStart(loc1)
+                    .setEnd(loc2)
+                    .build().run().getPath().get();
         } catch (InterruptedException | ExecutionException e) {
             // do nothing
             return null;
@@ -105,8 +126,8 @@ public class WindowOptimizer implements PathOptimizer {
 
     /**
      *
-     * @param lowerIndex
-     * @param upperIndex
+     * @param lowerIndex - inclusive
+     * @param upperIndex - exclusive
      * @return null if no matches
      */
     private int[] getBestPair(int lowerIndex, int upperIndex){
@@ -118,7 +139,7 @@ public class WindowOptimizer implements PathOptimizer {
         int[] bestMatch = null;
         int bestScore = (int) (0.1 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
 
-        for(; lowerIndex < upperIndex; ++lowerIndex){
+        for(; lowerIndex < upperLimit - 1; ++lowerIndex){
             Coordinate prev = it.next();
             upperIndex = lowerIndex + 1;
             Iterator<Coordinate> upperIt = fullPath.listIterator(upperIndex);
@@ -153,7 +174,7 @@ public class WindowOptimizer implements PathOptimizer {
     private int optimizeWindow(int lowerIndex, int upperIndex){
         // Bounds check
         if(upperIndex > fullPath.size()) return 0;
-
+        // TODO: Fill in this function to break up the code above
         return -1;
     }
 

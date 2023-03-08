@@ -24,6 +24,16 @@ public abstract class PathBuilder {
 
     public int getMaxPathLength() { return maxPathLength; }
 
+    public PathBuilder setStart(Location start){
+        this.start = start;
+        return this;
+    }
+
+    public PathBuilder setEnd(Location end){
+        this.end = end;
+        return this;
+    }
+
     /**
      *
      * @param maxPathLength - parameter that tells pathfinder when to give up searching. Default: INTEGER.MAX_VALUE (No path length limit)
