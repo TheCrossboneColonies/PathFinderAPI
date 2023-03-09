@@ -18,12 +18,12 @@ public class WindowOptimizer implements PathOptimizer {
     /**
      * Denotes offset (in path index / blocks) to start with. Larger indicates more optimization, but more computation
      */
-    private final int INITIAL_BLOCK_OFFSET = 1000;
+    private final int INITIAL_BLOCK_OFFSET = 1024;
 
     /**
      * Decimal < 1 denoting how block offset should change with each loop. A higher value means more computation and more optimization
      */
-    private final float MULTIPLIER = 0.8F;
+    private final float MULTIPLIER = 0.25F; // Was 0.8F
 
 
     /**
@@ -52,12 +52,10 @@ public class WindowOptimizer implements PathOptimizer {
         long startTime = System.currentTimeMillis();
 
         // Sliding window to find mini paths
-        while(currentBlockOffset > 3){ // Offset of 3 indicates a sub-path length of 3. There is no way to optimize a 3 block long path to become shorter, so this is the lower-bound
+        while(currentBlockOffset > 15){
 
             // Index in inflectionPoints corresponding to start of current window
             int firstWindowIndex = 0;
-
-            PathAPIMessager.debug("NEW WINDOW LENGTH: " + currentBlockOffset);
 
             // TODO: REMOVE
             int initialLength = fullPath.size();
@@ -137,7 +135,7 @@ public class WindowOptimizer implements PathOptimizer {
         int upperLimit = upperIndex;
 
         int[] bestMatch = null;
-        int bestScore = (int) (0.1 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
+        int bestScore = (int) (0.15 * (upperIndex - lowerIndex)); // Don't attempt to optimize unless it's possible to optimize path length by more than 10%
 
         for(; lowerIndex < upperLimit - 1; ++lowerIndex){
             Coordinate prev = it.next();
@@ -147,6 +145,9 @@ public class WindowOptimizer implements PathOptimizer {
                 Coordinate next = upperIt.next();
 
                 // Calculate score
+                //int diffX = prev.getX() - next.getX();
+                //int diffZ = prev.getZ() - next.getZ();
+                //float actualDistance = (float) Math.sqrt(diffX*diffX + diffZ*diffZ); // Euclidean
                 int actualDistance = Math.abs(prev.getX() - next.getX()) + Math.abs(prev.getZ() - next.getZ()); // manhatten
                 int pathDistance = upperIndex - lowerIndex;
                 int score = pathDistance - actualDistance;

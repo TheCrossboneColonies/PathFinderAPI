@@ -90,43 +90,57 @@ public class FindCommand {
 
 
                                 // Run in main thread
-//                                new BukkitRunnable() {
-//
-//                                    @Override
-//                                    public void run() {
-//
-//                                        // Optimized is in gold
-//                                        for(Coordinate coord : path){
-//                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-//                                            loc.getBlock().setType(Material.GOLD_BLOCK);
-//                                        }
-//
-////                                        for(Coordinate coord : list){
-////                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-////                                            loc.getBlock().setType(Material.STONE);
-////                                        }
-//
-//
-//                                    }
-//                                }.runTask(plugin);
-//
-//
-//                                new BukkitRunnable() {
-//                                    @Override
-//                                    public void run() {
-////                                        for(Coordinate coord : list){
-////                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-////                                            loc.getBlock().setType(Material.STONE);
-////                                        }
-//
-//                                        // Optimized
-//                                        for(Coordinate coord : path){
-//                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
-//                                            loc.getBlock().setType(Material.STONE);
-//                                        }
-//
-//                                    }
-//                                }.runTaskLater(plugin, 200L);
+                                new BukkitRunnable() {
+                                    int stepsPerTick = 50;
+                                    int loopCounter = 0;
+                                    @Override
+                                    public void run() {
+                                        int firstIndex = stepsPerTick * loopCounter;
+                                        // Optimized is in gold
+                                        for(int index = firstIndex; index < firstIndex + stepsPerTick && index < path.size(); ++index){
+                                            Coordinate coord = path.get(index);
+                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+                                            loc.getBlock().setType(Material.GOLD_BLOCK);
+                                        }
+
+                                        for(int index = firstIndex; index < firstIndex + stepsPerTick && index < list.size(); ++index){
+                                            Coordinate coord = list.get(index);
+                                            Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+                                            loc.getBlock().setType(Material.STONE);
+                                        }
+
+
+                                        // Cancel after gold set
+                                        if(firstIndex >= path.size() && firstIndex >= list.size()) {
+                                            cancel();
+
+                                            // Revert gold back to stone after 40 sec
+                                            new BukkitRunnable() {
+                                                int stepsPerTick2 = 50;
+                                                int loopCounter2 = 0;
+                                                @Override
+                                                public void run() {
+                                                    int firstIndex2 = stepsPerTick2 * loopCounter2;
+                                                    // Optimized set back to STONE
+                                                    for(int index = firstIndex2; index < firstIndex2 + stepsPerTick2 && index < path.size(); ++index){
+                                                        Coordinate coord = path.get(index);
+                                                        Location loc = new Location(Bukkit.getWorld("world"), coord.getX(), coord.getY(), coord.getZ());
+                                                        loc.getBlock().setType(Material.STONE);
+                                                    }
+
+                                                    ++loopCounter2;
+                                                }
+                                            }.runTaskTimer(plugin, 800L, 1L);
+
+                                        } // End cancellation
+
+
+                                        ++loopCounter;
+                                    }
+                                }.runTaskTimer(plugin, 0L, 1L);
+
+
+
 
                             });
 
