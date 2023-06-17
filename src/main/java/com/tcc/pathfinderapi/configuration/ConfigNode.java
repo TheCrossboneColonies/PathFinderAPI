@@ -10,28 +10,23 @@ public enum ConfigNode {
     private final String FILE_PATH;
     private final String ROOT;
 
-    ConfigNode(String file, String root) {
+    ConfigNode (String file, String root) {
+
         this.FILE_PATH = file;
         this.ROOT = root;
     }
 
     /**
-     * Retrieves file path for a config option
+     * Retrieves file path for a config option.
      *
      * @return The file path for a config option
      */
-    public String getFilePath() {
-
-        return FILE_PATH;
-    }
+    public String getFilePath () { return this.FILE_PATH; }
 
     /**
-     * Retrieves the root for a config option
+     * Retrieves the root for a config option.
      *
      * @return The root for a config option
      */
-    public String getRoot() {
-
-        return ROOT;
-    }
+    public String getRoot () { return this.ROOT; }
 }

@@ -1,56 +1,31 @@
 package com.tcc.pathfinderapi.pathing;
 
-import com.tcc.pathfinderapi.PathFinderAPI;
-import com.tcc.pathfinderapi.errorHandling.PathException;
-import com.tcc.pathfinderapi.pathing.PathFinderScheduler;
-import com.tcc.pathfinderapi.pathing.PathFinderTask;
-import com.tcc.pathfinderapi.pathing.PathStepResponse;
-import com.tcc.pathfinderapi.pathing.pathfinders.Greedy;
 import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class PathFinder {
 
-        private Location start;
-        private Location end;
+    private Location start;
+    private Location end;
+    private int maxPathLength;
 
-        private int maxPathLength;
+    public PathFinder (PathBuilder pathBuilder) {
 
-        public PathFinder(PathBuilder builder){
-                this.start = builder.getStart();
-                this.end = builder.getEnd();
-                this.maxPathLength = builder.getMaxPathLength();
-        }
+        this.start = pathBuilder.getStart();
+        this.end = pathBuilder.getEnd();
+        this.maxPathLength = pathBuilder.getMaxPathLength();
+    }
 
+    public Location getStart () { return this.start; }
+    public Location getEnd () { return this.end; }
+    public int getMaxPathLength () { return this.maxPathLength; }
 
-        public abstract PathBuilder toBuilder();
+    public final PathFinderTask run () { return PathFinderScheduler.run(this); }
 
+    protected void onStart () {}
+    protected void onComplete () {}
+    protected void onSuccess () {}
+    protected void onError () {}
 
-        public Location getStart(){
-                return start;
-        }
-
-        public Location getEnd(){
-                return end;
-        }
-        public int getMaxPathLength() { return maxPathLength; }
-
-        public final PathFinderTask run(){
-                return PathFinderScheduler.run(this);
-        }
-        protected void onStart(){
-
-        }
-        protected void onComplete(){
-
-        }
-        protected void onSuccess(){
-
-        }
-        protected void onError(){
-
-        }
-
-        protected abstract PathStepResponse step();
-
+    public abstract PathBuilder toBuilder();
+    protected abstract PathStepResponse step();
 }

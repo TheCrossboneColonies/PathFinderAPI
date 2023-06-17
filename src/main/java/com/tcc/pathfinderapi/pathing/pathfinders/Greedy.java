@@ -1,6 +1,5 @@
 package com.tcc.pathfinderapi.pathing.pathfinders;
 
-import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import com.tcc.pathfinderapi.pathing.*;
 import org.bukkit.*;
@@ -11,258 +10,209 @@ import java.util.function.Predicate;
 
 public class Greedy extends PathFinder {
 
-    // Algorithm variables
     private RoadCoordinate end;
     private RoadCoordinate start;
     private World world;
+
     private RoadCoordinate currentBackTraceNode;
     private PriorityQueue<RoadCoordinate> closedList;
     private PriorityQueue<RoadCoordinate> openList;
 
     private PathBuildStage currentStage = PathBuildStage.SEARCH;
     private int stepCount = 0;
-    private long startSearchTime;
-    private LinkedList<Coordinate> fullPath = new LinkedList<>();
 
-    /**
-     * Stores all roadcoordinates so neighbors can be easily found
-     */
+    private LinkedList<Coordinate> fullPath = new LinkedList<>();
     private Map<Long, RoadCoordinate> masterList;
 
-    // Configuration variables
     private final double LIQUID_PENALTY = 20;
     private final int LIQUID_RADIUS;
     private final double CLIFF_PENALTY = 20;
     private final int CLIFF_RADIUS;
 
+    public Greedy (GreedyBuilder greedyBuilder) {
+        
+        super(greedyBuilder);
 
+        // Note: This is temporary until we get multi-world support.
+        if (!this.checkSameWorld(greedyBuilder.getStart(), greedyBuilder.getEnd())) throw new RuntimeException("Start and end locations not in same world!");
 
+        this.LIQUID_RADIUS = greedyBuilder.LIQUID_RADIUS;
+        this.CLIFF_RADIUS = greedyBuilder.CLIFF_RADIUS;
 
-    public Greedy(GreedyBuilder builder){
-        super(builder);
+        this.world = greedyBuilder.getStart().getWorld();
+        this.start = new RoadCoordinate(greedyBuilder.getStart().getBlockX(), greedyBuilder.getStart().getBlockY(), greedyBuilder.getStart().getBlockZ());
+        this.end = new RoadCoordinate(greedyBuilder.getEnd().getBlockX(), greedyBuilder.getEnd().getBlockY(), greedyBuilder.getEnd().getBlockZ());
 
-        // Check start and end in same world
-        // Note: This is temporary until we get multi-world support
-        if(!checkSameWorld(builder.getStart(), builder.getEnd())) throw new RuntimeException("Start and end locations not in same world!");
+        this.closedList = new PriorityQueue<RoadCoordinate>();
+        this.openList = new PriorityQueue<RoadCoordinate>();
+        this.masterList = new HashMap<Long, RoadCoordinate>();
+        this.masterList.put(coordinateToLong(this.start.coordinateLocation), this.start);
+        this.masterList.put(coordinateToLong(this.end.coordinateLocation), this.end);
 
-        // Set configuration variables
-        this.LIQUID_RADIUS = builder.LIQUID_RADIUS;
-        this.CLIFF_RADIUS = builder.CLIFF_RADIUS;
-
-        this.world = builder.getStart().getWorld();
-        // Start and end swapped so path is generated from start to end (due to backtracing)
-        this.start = new RoadCoordinate(builder.getStart().getBlockX(), builder.getStart().getBlockY(), builder.getStart().getBlockZ());
-        this.end = new RoadCoordinate(builder.getEnd().getBlockX(), builder.getEnd().getBlockY(), builder.getEnd().getBlockZ());
-
-        // Pathing variables
-        closedList = new PriorityQueue<RoadCoordinate>();
-        openList = new PriorityQueue<RoadCoordinate>();
-        masterList = new HashMap<Long, RoadCoordinate>();
-        masterList.put(coordinateToLong(this.start.coordLoc), this.start);
-        masterList.put(coordinateToLong(this.end.coordLoc), this.end);
-        this.start.h = heuristicDistance(this.end);
-        openList.add(this.start);
+        this.start.heuristic = this.heuristicDistance(this.end);
+        this.openList.add(this.start);
     }
 
     /**
-     * Obtain a new {@link GreedyBuilder GreedyBuilder}
-     * @param start
-     * @param end
-     * @return
+     * Obtain a new {@link GreedyBuilder GreedyBuilder}.
      */
-    public static GreedyBuilder getBuilder(Location start, Location end){
-        return new GreedyBuilder(start, end);
-    }
-
+    public static GreedyBuilder getBuilder (Location start, Location end) { return new GreedyBuilder(start, end); }
 
     /**
-     * Obtain a new {@link GreedyBuilder GreedyBuilder} using current instance
-     * @return
+     * Obtain a new {@link GreedyBuilder GreedyBuilder} using current instance.
      */
     @Override
-    public PathBuilder toBuilder() {
+    public PathBuilder toBuilder () {
+
         return new GreedyBuilder(super.getStart(), super.getEnd())
-                .setCliffRadius(CLIFF_RADIUS)
-                .setLiquidRadius(LIQUID_RADIUS);
-        // TODO: ADD LIMITS
-    }
+            .setCliffRadius(CLIFF_RADIUS)
+            .setLiquidRadius(LIQUID_RADIUS);
 
-    @Override
-    protected void onStart(){
-        startSearchTime = System.currentTimeMillis();
+        // TODO: Add Limits
     }
 
 
     @Override
-    protected PathStepResponse step() {
-        if(currentStage == PathBuildStage.SEARCH){
-            stepSearch();
+    protected PathStepResponse step () {
+
+        if (this.currentStage == PathBuildStage.SEARCH) {
+
+            this.stepSearch();
             return new PathStepResponse(PathStepResult.CONTINUE);
-        }
-        else if(currentStage == PathBuildStage.BACKTRACE){
-            stepBacktrace();
+        } else if (this.currentStage == PathBuildStage.BACKTRACE) {
+
+            this.stepBacktrace();
             return new PathStepResponse(PathStepResult.CONTINUE);
-        }
-        else if(currentStage == PathBuildStage.SUCCESS) {
-            PathStepResponse response = new PathStepResponse(PathStepResult.SUCCESS);
-            response.addMetaData("path", fullPath);
-            return response;
+        } else if (this.currentStage == PathBuildStage.SUCCESS) {
+
+            PathStepResponse pathStepResponse = new PathStepResponse(PathStepResult.SUCCESS);
+            pathStepResponse.addMetaData("path", fullPath);
+            return pathStepResponse;
         }
 
-        PathStepResponse response = new PathStepResponse(PathStepResult.ERROR);
-        response.addMetaData("error_message", "Path could not be found");
-        return response;
+        PathStepResponse pathStepResponse = new PathStepResponse(PathStepResult.ERROR);
+        pathStepResponse.addMetaData("error_message", "Path Couldn't be Found");
+        return pathStepResponse;
     }
 
+    private boolean stepSearch () {
 
+        if (this.openList.isEmpty()) {
 
-    private boolean stepSearch() {
-
-        if(openList.isEmpty()) {
-            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Open list empty"));
-            currentStage = PathBuildStage.ERROR;
-            return true; //Error, no path found
+            this.currentStage = PathBuildStage.ERROR;
+            return true;
         }
 
         Predicate<Integer> keepSearchingCheck = (stepCount) -> {
-            int MIN_STEP_COUNT = Math.abs(this.start.coordLoc.getX() - this.end.coordLoc.getX())
-                    + Math.abs(this.start.coordLoc.getY() - this.end.coordLoc.getY())
-                    + Math.abs(this.start.coordLoc.getZ() - this.end.coordLoc.getZ());
+
+            int MIN_STEP_COUNT = Math.abs(this.start.coordinateLocation.getX() - this.end.coordinateLocation.getX()) + Math.abs(this.start.coordinateLocation.getY() - this.end.coordinateLocation.getY()) + Math.abs(this.start.coordinateLocation.getZ() - this.end.coordinateLocation.getZ());
             return stepCount <= 10 * MIN_STEP_COUNT;
         };
 
-        //Check if step count has surpassed the limit
-        if(!keepSearchingCheck.test(stepCount)) {
-            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cError: No path found! Too many steps taken"));
-            currentStage = PathBuildStage.ERROR;
-            return true; //Error, no path found
+        if (!keepSearchingCheck.test(stepCount)) {
+
+            this.currentStage = PathBuildStage.ERROR;
+            return true;
         }
+
         ++stepCount;
 
         RoadCoordinate n = openList.peek();
 
-        if(n == end){
-            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&aPath found! Backtracing started." +
-           //         " Path search time: " + (System.currentTimeMillis() - startSearchTime) + " ms"));
-            currentBackTraceNode = end;
-            currentStage = PathBuildStage.BACKTRACE;
-
-            return true; //Path found successfully!
+        if (n == this.end) {
+            
+            this.currentBackTraceNode = this.end;
+            this.currentStage = PathBuildStage.BACKTRACE;
+            return true;
         }
 
-        //Loop through neighbors. Loop order depends on which direction we want to prioritize (direction we want is checked last)
-        for(RoadCoordinate m : n.getNeighbors(masterList)){
-            //If undiscovered
-            if(!openList.contains(m) && !closedList.contains(m)){
+        for (RoadCoordinate m : n.getNeighbors(masterList)) {
+
+            if (!this.openList.contains(m) && !this.closedList.contains(m)) {
+
                 m.parent = n;
-                m.h = heuristicDistance(m);
+                m.heuristic = this.heuristicDistance(m);
                 openList.add(m);
             }
-
         }
 
-        openList.remove(n);
-        closedList.add(n);
-
+        this.openList.remove(n);
+        this.closedList.add(n);
         return false;
     }
 
-    private boolean stepBacktrace() {
+    private boolean stepBacktrace () {
 
-        // Check max path length
-        if(fullPath.size() > getMaxPathLength()){
-            currentStage = PathBuildStage.ERROR;
+        if (this.fullPath.size() > this.getMaxPathLength()) {
+
+            this.currentStage = PathBuildStage.ERROR;
             return true;
         }
 
-        // Continue backtrace
-        if(!currentBackTraceNode.equals(start)) {
+        if (!this.currentBackTraceNode.equals(this.start)) {
 
-            fullPath.addFirst(currentBackTraceNode.coordLoc);
-
-            currentBackTraceNode = currentBackTraceNode.parent;
+            this.fullPath.addFirst(this.currentBackTraceNode.coordinateLocation);
+            this.currentBackTraceNode = this.currentBackTraceNode.parent;
             return false;
-        }
-        else {
-            //Add start location
-            fullPath.addFirst(currentBackTraceNode.coordLoc);
+        } else {
 
-            //PathAPIMessager.debug(ChatColor.translateAlternateColorCodes('&', "&cBacktracing complete! Path length: " + fullPath.size()));
-
-            currentStage = PathBuildStage.SUCCESS;
-
+            this.fullPath.addFirst(this.currentBackTraceNode.coordinateLocation);
+            this.currentStage = PathBuildStage.SUCCESS;
             return true;
         }
     }
 
+    private double heuristicDistance (RoadCoordinate currentLocation) {
 
+        double weight = currentLocation.coordinateLocation.distance(this.end.coordinateLocation);
 
-    /*
-     * PRIVATE HELPER FUNCTIONS...
-     */
+        currentLocation.isNearLiquid = this.isCoordNearLiquid(currentLocation);
+        if (currentLocation.isNearLiquid) { weight += this.LIQUID_PENALTY; }
 
-
-    /**
-     * Approximate weight
-     * @param currentLoc
-     * @return
-     */
-    private double heuristicDistance(RoadCoordinate currentLoc) {
-
-        double weight = currentLoc.coordLoc.distance(end.coordLoc);
-
-        //Give punishment for water
-        currentLoc.isNearLiquid = isCoordNearLiquid(currentLoc);
-        if(currentLoc.isNearLiquid) {
-            weight += LIQUID_PENALTY;
-        }
-
-        //Give punishment for cliff
-        currentLoc.isNearCliff = isCoordNearCliff(currentLoc);
-        if(currentLoc.isNearCliff) {
-            weight += CLIFF_PENALTY;
-        }
+        currentLocation.isNearCliff = this.isCoordNearCliff(currentLocation);
+        if (currentLocation.isNearCliff) { weight += CLIFF_PENALTY; }
 
         return  weight;
     }
 
     /**
-     * Likely a laggy operation as chunks need to be loaded to check the block type
-     * @param coord - coordinate to check
-     * @return
+     * Likely a laggy operation as chunks need to be loaded to check the block type.
      */
-    private boolean isCoordNearLiquid(RoadCoordinate coord) {
-        if(coord.parent == null || coord.parent.isNearLiquid) {
-            for(int ix = coord.coordLoc.getX() - LIQUID_RADIUS; ix <= coord.coordLoc.getX() + LIQUID_RADIUS; ++ix) {
-                for(int iy = coord.coordLoc.getY() - LIQUID_RADIUS; iy <= coord.coordLoc.getY() + LIQUID_RADIUS; ++iy) {
-                    for(int iz = coord.coordLoc.getZ() - LIQUID_RADIUS; iz <= coord.coordLoc.getZ() + LIQUID_RADIUS; ++iz) {
-                        Material type = BlockManager.getBlockType(world,
-                                ix, iy, iz);
-                        if(type == Material.WATER || type == Material.LAVA) return true;
+    private boolean isCoordNearLiquid (RoadCoordinate roadCoordinate) {
+
+        if (roadCoordinate.parent == null || roadCoordinate.parent.isNearLiquid) {
+
+            for (int ix = roadCoordinate.coordinateLocation.getX() - LIQUID_RADIUS; ix <= roadCoordinate.coordinateLocation.getX() + LIQUID_RADIUS; ++ix) {
+
+                for (int iy = roadCoordinate.coordinateLocation.getY() - LIQUID_RADIUS; iy <= roadCoordinate.coordinateLocation.getY() + LIQUID_RADIUS; ++iy) {
+
+                    for (int iz = roadCoordinate.coordinateLocation.getZ() - LIQUID_RADIUS; iz <= roadCoordinate.coordinateLocation.getZ() + LIQUID_RADIUS; ++iz) {
+
+                        Material material = BlockManager.getBlockType(world, ix, iy, iz);
+                        if (material == Material.WATER || material == Material.LAVA) return true;
                     }
                 }
             }
+        } else {
 
-        }
-        // Parent is NOT near liquid - check just a few blocks to ensure still not near liquid
-        // Assumes parent has no coordinate difference of > 1 in x, y, or z
-        else {
-            // Offsets must be greater than radius from parent
-            for(int ix = coord.coordLoc.getX() - LIQUID_RADIUS; ix <= coord.coordLoc.getX() + LIQUID_RADIUS; ++ix) {
-                boolean isWithinParentX = Math.abs(ix - coord.parent.coordLoc.getX()) <= LIQUID_RADIUS;
-                for(int iy = coord.coordLoc.getY() - LIQUID_RADIUS; iy <= coord.coordLoc.getY() + LIQUID_RADIUS; ++iy) {
-                    boolean isWithinParentY = Math.abs(iy - coord.parent.coordLoc.getY()) <= LIQUID_RADIUS;
-                    for(int iz = coord.coordLoc.getZ() - LIQUID_RADIUS; iz <= coord.coordLoc.getZ() + LIQUID_RADIUS; ++iz) {
-                        boolean isWithinParentZ = Math.abs(iz - coord.parent.coordLoc.getZ()) <= LIQUID_RADIUS;
-                        if(isWithinParentX && isWithinParentY && isWithinParentZ) continue;
-                        Material type = BlockManager.getBlockType(world,
-                                ix, iy, iz);
-                        if(type == Material.WATER || type == Material.LAVA) return true;
+            for (int ix = roadCoordinate.coordinateLocation.getX() - LIQUID_RADIUS; ix <= roadCoordinate.coordinateLocation.getX() + LIQUID_RADIUS; ++ix) {
+
+                boolean isWithinParentX = Math.abs(ix - roadCoordinate.parent.coordinateLocation.getX()) <= LIQUID_RADIUS;
+
+                for (int iy = roadCoordinate.coordinateLocation.getY() - LIQUID_RADIUS; iy <= roadCoordinate.coordinateLocation.getY() + LIQUID_RADIUS; ++iy) {
+
+                    boolean isWithinParentY = Math.abs(iy - roadCoordinate.parent.coordinateLocation.getY()) <= LIQUID_RADIUS;
+
+                    for (int iz = roadCoordinate.coordinateLocation.getZ() - LIQUID_RADIUS; iz <= roadCoordinate.coordinateLocation.getZ() + LIQUID_RADIUS; ++iz) {
+
+                        boolean isWithinParentZ = Math.abs(iz - roadCoordinate.parent.coordinateLocation.getZ()) <= LIQUID_RADIUS;
+
+                        if (isWithinParentX && isWithinParentY && isWithinParentZ) continue;
+                        Material material = BlockManager.getBlockType(world, ix, iy, iz);
+                        if (material == Material.WATER || material == Material.LAVA) return true;
                     }
                 }
             }
-
-
         }
 
         return false;
@@ -270,172 +220,155 @@ public class Greedy extends PathFinder {
 
     /**
      * Likely a laggy operation as chunks need to be loaded to check block type.
-     * Checks for a column of air blocks 3 below the block up to 2 above
-     * @param coord
-     * @return
+     * Checks for a column of air blocks 3 below the block up to 2 above.
      */
-    private boolean isCoordNearCliff(RoadCoordinate coord) {
-        for(int xOffset = -1 * CLIFF_RADIUS; xOffset <= CLIFF_RADIUS; ++xOffset) {
-            for(int zOffset = -1 * CLIFF_RADIUS; zOffset <= CLIFF_RADIUS; ++zOffset) {
+    private boolean isCoordNearCliff (RoadCoordinate roadCoordinate) {
+
+        for (int xOffset = -1 * CLIFF_RADIUS; xOffset <= CLIFF_RADIUS; ++xOffset) {
+
+            for (int zOffset = -1 * CLIFF_RADIUS; zOffset <= CLIFF_RADIUS; ++zOffset) {
+
                 boolean columnIsAir = true;
-                for(int yOffset = -3; yOffset <= 2; ++yOffset) {
-                    Material type = BlockManager.getBlockType(world,
-                            coord.coordLoc.getX() + xOffset,
-                            coord.coordLoc.getY() + yOffset,
-                            coord.coordLoc.getZ() + zOffset);
-                    if(!type.isAir()) {
+
+                for (int yOffset = -3; yOffset <= 2; ++yOffset) {
+
+                    Material material = BlockManager.getBlockType(world, roadCoordinate.coordinateLocation.getX() + xOffset, roadCoordinate.coordinateLocation.getY() + yOffset, roadCoordinate.coordinateLocation.getZ() + zOffset);
+                    if (!material.isAir()) {
+
                         columnIsAir = false;
                         break;
                     }
                 }
+
                 if(columnIsAir) return true;
             }
         }
+
         return false;
     }
 
-    // Use RoadCoordinates to avoid use of redundant data found in Bukkit's Location object
-    private class RoadCoordinate implements Comparable<RoadCoordinate>{
-        Coordinate coordLoc;
+    // Use RoadCoordinates to avoid use of redundant data found in Bukkit's Location object.
+    private class RoadCoordinate implements Comparable<RoadCoordinate> {
 
+        Coordinate coordinateLocation;
         boolean isNearLiquid = false;
         boolean isNearCliff = false;
 
-        double h;
-
-        RoadCoordinate parent = null; //Previous location used for backtracking
+        double heuristic;
+        RoadCoordinate parent = null;
 
         private List<RoadCoordinate> neighbors;
 
-        RoadCoordinate(int x, int y, int z){
-            coordLoc = new Coordinate(x, y, z);
-        }
+        RoadCoordinate (int x, int y, int z) { this.coordinateLocation = new Coordinate(x, y, z); }
 
-        //Copy constructor
-        RoadCoordinate(RoadCoordinate coord){
-            coordLoc = new Coordinate(coord.coordLoc.getX(), coord.coordLoc.getY(), coord.coordLoc.getZ());
-        }
+        List<RoadCoordinate> getNeighbors(Map<Long, RoadCoordinate> coordinateMap) {
 
-        List<RoadCoordinate> getNeighbors(Map<Long, RoadCoordinate> coordMap){
-
-            if(neighbors != null) return neighbors;
+            if (this.neighbors != null) return neighbors;
             List<RoadCoordinate> neighbors = new ArrayList<>();
 
-            //Get neighbors top down
-            RoadCoordinate posX = getOrCreateCoordinateIncline(coordLoc.getX() + 1, coordLoc.getY(), coordLoc.getZ(), coordMap);
-            if(posX != null) neighbors.add(posX);
-            RoadCoordinate negX = getOrCreateCoordinateIncline(coordLoc.getX() - 1, coordLoc.getY(), coordLoc.getZ(), coordMap);
-            if(negX != null) neighbors.add(negX);
-            RoadCoordinate posZ = getOrCreateCoordinateIncline(coordLoc.getX(), coordLoc.getY(), coordLoc.getZ() + 1, coordMap);
-            if(posZ != null) neighbors.add(posZ);
-            RoadCoordinate negZ = getOrCreateCoordinateIncline(coordLoc.getX(), coordLoc.getY(), coordLoc.getZ() - 1, coordMap);
-            if(negZ != null) neighbors.add(negZ);
+            RoadCoordinate posX = getOrCreateCoordinateIncline(coordinateLocation.getX() + 1, coordinateLocation.getY(), coordinateLocation.getZ(), coordinateMap);
+            if (posX != null) this.neighbors.add(posX);
+
+            RoadCoordinate negX = getOrCreateCoordinateIncline(coordinateLocation.getX() - 1, coordinateLocation.getY(), coordinateLocation.getZ(), coordinateMap);
+            if (negX != null) this.neighbors.add(negX);
+
+            RoadCoordinate posZ = getOrCreateCoordinateIncline(coordinateLocation.getX(), coordinateLocation.getY(), coordinateLocation.getZ() + 1, coordinateMap);
+            if (posZ != null) this.neighbors.add(posZ);
+
+            RoadCoordinate negZ = getOrCreateCoordinateIncline(coordinateLocation.getX(), coordinateLocation.getY(), coordinateLocation.getZ() - 1, coordinateMap);
+            if (negZ != null) this.neighbors.add(negZ);
 
             this.neighbors = neighbors;
-
             return this.neighbors;
         }
 
-
         @Override
-        public int compareTo(RoadCoordinate other) {
-            return Double.compare(this.h, other.h);
-        }
-
+        public int compareTo (RoadCoordinate otherRoadCoordinate) { return Double.compare(this.heuristic, otherRoadCoordinate.heuristic); }
     }
 
     /**
      * Variation of getOrCreateCoordinate that finds coordinate one above or one below specified y value
-     * - since it's impossible for a more than one coordinate to exist in a span of 3 blocks with only difference being in y
-     * @param x
-     * @param y
-     * @param z
-     * @return
+     * - since it's impossible for a more than one coordinate to exist in a span of 3 blocks with only difference being in y.
      */
     @Nullable
-    private RoadCoordinate getOrCreateCoordinateIncline(int x, int y, int z, Map<Long, RoadCoordinate> coordMap) {
-        for(int adjustedY = y + 1; adjustedY >= y - 1; --adjustedY) {
-            RoadCoordinate coord = getOrCreateCoordinate(x, adjustedY, z, coordMap);
-            if(coord != null) return coord;
+    private RoadCoordinate getOrCreateCoordinateIncline (int x, int y, int z, Map<Long, RoadCoordinate> coordinateMap) {
+
+        for (int adjustedY = y + 1; adjustedY >= y - 1; --adjustedY) {
+
+            RoadCoordinate roadCoordinate = getOrCreateCoordinate(x, adjustedY, z, coordinateMap);
+            if (roadCoordinate != null) return roadCoordinate;
         }
+
         return null;
     }
 
-    private RoadCoordinate getOrCreateCoordinate(int x, int y, int z, Map<Long, RoadCoordinate> coordMap) {
-        Long currentLong = coordinateToLong(x, y, z);
-        RoadCoordinate currentCoord = coordMap.get(currentLong);
+    private RoadCoordinate getOrCreateCoordinate (int x, int y, int z, Map<Long, RoadCoordinate> coordinateMap) {
 
-        if(currentCoord == null) {
-            if(isValidSolidCoordinate(x, y, z)) {
-                currentCoord = new RoadCoordinate(x, y, z);
-                coordMap.put(currentLong, currentCoord);
+        Long currentLong = this.coordinateToLong(x, y, z);
+        RoadCoordinate currentRoadCoordinate = coordinateMap.get(currentLong);
+
+        if (currentRoadCoordinate == null) {
+
+            if(this.isValidSolidCoordinate(x, y, z)) {
+
+                currentRoadCoordinate = new RoadCoordinate(x, y, z);
+                coordinateMap.put(currentLong, currentRoadCoordinate);
             }
         }
-        return currentCoord;
+
+        return currentRoadCoordinate;
     }
 
+    private boolean isValidSolidCoordinate (int x, int y, int z) {
 
-    private boolean isValidSolidCoordinate(int x, int y, int z) {
-        Material locMat = BlockManager.getBlockType(world, x, y, z);
-        Material oneAboveMat = BlockManager.getBlockType(world, x, y + 1, z);
-        Material twoAboveMat = BlockManager.getBlockType(world, x, y + 2, z);
-        if((locMat.isSolid() || locMat == Material.WATER || locMat == Material.LAVA) && !locMat.toString().contains("LEAVES")) {
-            if(!oneAboveMat.isSolid() && oneAboveMat != Material.WATER && oneAboveMat != Material.LAVA) {
-                if(!twoAboveMat.isSolid() && twoAboveMat != Material.WATER && twoAboveMat != Material.LAVA) {
+        Material locationMaterial = BlockManager.getBlockType(world, x, y, z);
+        Material oneAboveMaterial = BlockManager.getBlockType(world, x, y + 1, z);
+        Material twoAboveMaterial = BlockManager.getBlockType(world, x, y + 2, z);
+
+        if ((locationMaterial.isSolid() || locationMaterial == Material.WATER || locationMaterial == Material.LAVA) && !locationMaterial.toString().contains("LEAVES")) {
+
+            if (!oneAboveMaterial.isSolid() && oneAboveMaterial != Material.WATER && oneAboveMaterial != Material.LAVA) {
+
+                if (!twoAboveMaterial.isSolid() && twoAboveMaterial != Material.WATER && twoAboveMaterial != Material.LAVA) {
+
                     return true;
                 }
             }
         }
+
         return false;
     }
 
+    private boolean checkSameWorld (Location locationOne, Location locationTwo) { return locationOne.getWorld() == locationTwo.getWorld(); }
 
-    private boolean checkSameWorld(Location loc1, Location loc2){
-        return loc1.getWorld() == loc2.getWorld();
-    }
-
-    private Long coordinateToLong(final Coordinate coordLoc) {
-        return ((long) coordLoc.getX() & 67108863) << 38 | ((long) coordLoc.getY() & 4095)
-                << 26 | ((long) coordLoc.getZ() & 67108863);
-    }
-
-    private Long coordinateToLong(final int x, final int y, final int z) {
-        return ((long) x & 67108863) << 38 | ((long) y & 4095) << 26 | ((long) z & 67108863);
-    }
-
-    private Coordinate longToCoordinate(long l) {
-        return new Coordinate((int)(l >> 38), (int)(l << 26 >> 52), (int)(l << 38 >> 38));
-    }
+    private Long coordinateToLong (final Coordinate coordinateLocation) { return ((long) coordinateLocation.getX() & 67108863) << 38 | ((long) coordinateLocation.getY() & 4095) << 26 | ((long) coordinateLocation.getZ() & 67108863); }
+    private Long coordinateToLong (final int x, final int y, final int z) { return ((long) x & 67108863) << 38 | ((long) y & 4095) << 26 | ((long) z & 67108863); }
 
     public static class GreedyBuilder extends PathBuilder {
-        // Optional Greedy variables
+
         private int LIQUID_RADIUS = 2;
         private int CLIFF_RADIUS = 2;
 
+        public GreedyBuilder (Location start, Location end) { super(start, end); }
 
-        public GreedyBuilder(Location start, Location end){
-            super(start, end);
-        }
+        public GreedyBuilder setLiquidRadius (int radius) {
 
-        public GreedyBuilder setLiquidRadius(int radius){
             this.LIQUID_RADIUS = radius;
             return this;
         }
 
-        public GreedyBuilder setCliffRadius(int radius){
+        public GreedyBuilder setCliffRadius (int radius) {
+
             this.CLIFF_RADIUS = radius;
             return this;
         }
 
-
         @Override
-        public Greedy build(){
-            return new Greedy(this);
-        }
+        public Greedy build () { return new Greedy(this); }
     }
 
-
     private enum PathBuildStage {
+        
         SEARCH, BACKTRACE, ERROR, SUCCESS;
     }
 }

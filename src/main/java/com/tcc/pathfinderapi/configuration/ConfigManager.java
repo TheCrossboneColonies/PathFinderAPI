@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,148 +14,126 @@ import java.util.*;
 
 /**
  * Used to obtain values from a configuration file.
- * Also updates outdated configuration files with new settings (does not remove old settings)
+ * Also updates outdated configuration files with new settings (does not remove old settings).
  */
 public class ConfigManager {
 
-    private PathFinderAPI plugin;
-
+    private PathFinderAPI pathFinderAPI;
     private Map<String, YamlConfiguration> configs = new HashMap<>();
+
     /**
-     * This value is updated whenever a change to any configuration file is made
+     * This value is updated whenever a change to any configuration file is made.
      */
     private final float CONFIG_VERSION = 1.0F;
-
     private final List<String> configFiles;
 
+    public ConfigManager (PathFinderAPI pathFinderAPI) {
 
-    public ConfigManager(PathFinderAPI plugin) {
-        this.plugin = plugin;
+        this.pathFinderAPI = pathFinderAPI;
 
-        configFiles = Arrays.asList(
+        this.configFiles = Arrays.asList(
                 "config.yml",
                 "lang.yml"
         );
 
     }
 
-    public void loadConfigFiles() {
+    public void loadConfigFiles () {
 
-        // Ensure directory exists
-        if(!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+        if(!this.pathFinderAPI.getDataFolder().exists()) this.pathFinderAPI.getDataFolder().mkdirs();
 
-        // Loop through each config file
         for (String filePath : configFiles) {
-            File file = new File(plugin.getDataFolder() + File.separator + filePath);
+
+            File file = new File(this.pathFinderAPI.getDataFolder() + File.separator + filePath);
 
             if (!file.exists()) {
-                // Create file
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+                try { file.createNewFile(); } 
+                catch (IOException ioException) { ioException.printStackTrace(); }
             }
 
-            // Check version and if it needs updating
-            YamlConfiguration configFile = YamlConfiguration.loadConfiguration(file);
-            String versionStr = configFile.getString("version");
-            float version = versionStr == null ? -1F : Float.parseFloat(versionStr);
+            YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
+            String versionString = yamlConfiguration.getString("version");
+            float version = versionString == null ? -1F : Float.parseFloat(versionString);
 
-            if (version != CONFIG_VERSION) {
-                // Use config nodes to update file
-                updateConfigFile(filePath);
-            }
-
-            // Load config file
+            if (version != CONFIG_VERSION) { updateConfigFile(filePath); }
             configs.put(filePath, YamlConfiguration.loadConfiguration(file));
-
         }
-
-
     }
 
-    public void updateConfigFile(String filePath) {
+    public void updateConfigFile (String filePath) {
 
-        File file = new File(plugin.getDataFolder() + File.separator + filePath);
-        YamlConfiguration configFile = YamlConfiguration.loadConfiguration(file);
+        File file = new File(this.pathFinderAPI.getDataFolder() + File.separator + filePath);
+        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
 
-        // Get updated config from resources with defaults
-        InputStream defaultStream = plugin.getResource(filePath);
-        if(defaultStream == null) return;
+        InputStream defaultStream = this.pathFinderAPI.getResource(filePath);
+        if (defaultStream == null) return;
 
-        // Update version (done first so it is placed at top of file)
-        configFile.set("version", CONFIG_VERSION);
-        configFile.setComments("version", Arrays.asList("Do not change this value!"));
+        yamlConfiguration.set("version", CONFIG_VERSION);
+        yamlConfiguration.setComments("version", Arrays.asList("Do not change this value!"));
 
-        YamlConfiguration defaultConfig = YamlConfiguration
-                .loadConfiguration(new InputStreamReader(defaultStream));
-        for(String key : defaultConfig.getKeys(true)){
-            Object ob = defaultConfig.get(key);
-            if(!(ob instanceof MemorySection)){
-                if(configFile.get(key) == null){
-                    configFile.set(key, ob);
-                    if(defaultConfig.getComments(key) != null) {
-                        configFile.setComments(key, defaultConfig.getComments(key));
-                    }
+        YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(defaultStream));
+        
+        for (String key : defaultConfig.getKeys(true)) {
 
+            Object object = defaultConfig.get(key);
+
+            if (!(object instanceof MemorySection)) {
+
+                if (yamlConfiguration.get(key) == null) {
+
+                    yamlConfiguration.set(key, object);
+                    if (defaultConfig.getComments(key) != null) { yamlConfiguration.setComments(key, defaultConfig.getComments(key)); }
                 }
             }
-
         }
 
-        // Save config file
-        try {
-            configFile.save(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        try { yamlConfiguration.save(file); } 
+        catch (IOException ioException) { ioException.printStackTrace(); }
     }
 
+    public boolean getBoolean (ConfigNode configNode) {
 
-
-    public boolean getBoolean(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getBoolean(configNode.getRoot());
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getBoolean(configNode.getRoot());
     }
 
-    public double getDouble(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getDouble(configNode.getRoot());
+    public double getDouble (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getDouble(configNode.getRoot());
     }
 
-    public int getInt(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getInt(configNode.getRoot());
+    public int getInt (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getInt(configNode.getRoot());
     }
 
-    public String getString(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getString(configNode.getRoot());
+    public String getString (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getString(configNode.getRoot());
     }
 
-    public List<String> getStringList(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getStringList(configNode.getRoot());
+    public List<String> getStringList (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getStringList(configNode.getRoot());
     }
 
-    public List<Map<?,?>> getMapList(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getMapList(configNode.getRoot());
+    public List<Map<?,?>> getMapList (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getMapList(configNode.getRoot());
     }
 
-    public Location getLocation(ConfigNode configNode){
-        YamlConfiguration config = configs.get(configNode.getFilePath());
-        return config.getLocation(configNode.getRoot());
+    public Location getLocation (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        return yamlConfiguration.getLocation(configNode.getRoot());
     }
 
-    public String getMessage(ConfigNode messageNode) {
-        return ChatColor.translateAlternateColorCodes('&', getString(ConfigNode.MESSAGES_PREFIX) + " " + getString(messageNode));
-    }
-
-    public String getMessageNoColor(ConfigNode messageNode) {
-        return getString(ConfigNode.MESSAGES_PREFIX) + " " + getString(messageNode);
-    }
-
+    public String getMessage (ConfigNode messageNode) { return ChatColor.translateAlternateColorCodes('&', getString(ConfigNode.MESSAGES_PREFIX) + " " + getString(messageNode)); }
+    public String getMessageNoColor (ConfigNode messageNode) { return getString(ConfigNode.MESSAGES_PREFIX) + " " + getString(messageNode); }
 }

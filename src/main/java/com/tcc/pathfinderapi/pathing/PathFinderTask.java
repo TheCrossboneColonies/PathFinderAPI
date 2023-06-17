@@ -11,33 +11,38 @@ import java.util.concurrent.CompletableFuture;
 
 public class PathFinderTask {
 
-    private BukkitTask task;
-
+    private BukkitTask bukkitTask;
     private CompletableFuture<List<Coordinate>> pathFuture;
 
-    PathFinderTask(PathFinder pathFinder){
+    PathFinderTask (PathFinder pathFinder) {
 
-        pathFuture = new CompletableFuture<>();
-
+        this.pathFuture = new CompletableFuture<>();
         pathFinder.onStart();
 
-        task = new BukkitRunnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    PathStepResponse response = pathFinder.step();
+        this.bukkitTask = new BukkitRunnable() {
 
-                    if (response.getResult() == PathStepResult.SUCCESS) {
-                        cancel();
+            @Override
+            public void run () {
+            
+                while (true) {
+
+                    PathStepResponse pathStepResponse = pathFinder.step();
+
+                    if (pathStepResponse.getResult() == PathStepResult.SUCCESS) {
+
+                        this.cancel();
                         pathFinder.onComplete();
                         pathFinder.onSuccess();
-                        pathFuture.complete((List<Coordinate>) response.getMetaData("path"));
+                        pathFuture.complete((List<Coordinate>) pathStepResponse.getMetaData("path"));
+
                         return;
-                    } else if (response.getResult() == PathStepResult.ERROR) {
-                        cancel();
+                    } else if (pathStepResponse.getResult() == PathStepResult.ERROR) {
+
+                        this.cancel();
                         pathFinder.onComplete();
                         pathFinder.onError();
-                        pathFuture.completeExceptionally(new PathException((String) response.getMetaData("error_message")));
+                        pathFuture.completeExceptionally(new PathException((String) pathStepResponse.getMetaData("error_message")));
+
                         return;
                     }
                 }
@@ -46,24 +51,11 @@ public class PathFinderTask {
     }
 
     /**
-     *
-     * @return a future to the complete path
+     * @return a future to the complete path.
      */
-    public CompletableFuture<List<Coordinate>> getPath(){
-        return pathFuture;
-    }
+    public CompletableFuture<List<Coordinate>> getPath () { return this.pathFuture; }
 
-    public boolean cancel(){
-        return PathFinderScheduler.cancelTask(this);
-    }
-
-    public int getTaskId(){
-        return task.getTaskId();
-    }
-
-    BukkitTask getTask(){
-        return task;
-    }
-
-
+    public boolean cancel () { return PathFinderScheduler.cancelTask(this); }
+    public int getTaskID () { return this.bukkitTask.getTaskId(); }
+    BukkitTask getTask () { return this.bukkitTask; }
 }
