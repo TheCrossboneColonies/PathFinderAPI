@@ -30,8 +30,14 @@ public class BlockManager {
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
 
+        int chunkCoordinateX = x % 16;
+        int chunkCoordinateZ = z % 16;
+
+        if (chunkCoordinateX < 0) chunkCoordinateX += 16;
+        if (chunkCoordinateZ < 0) chunkCoordinateZ += 16;
+
         ChunkSnapshot chunkSnapshot = getChunkSnapshot(world, chunkX, chunkZ);
-        return chunkSnapshot.getBlockType(x % 16, y, z % 16);
+        return chunkSnapshot.getBlockType(chunkCoordinateX, y, chunkCoordinateZ);
     }
 
     private static ChunkSnapshot getChunkSnapshot (World world, int chunkX, int chunkZ) {
