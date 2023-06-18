@@ -28,7 +28,6 @@ public final class PathFinderAPI extends JavaPlugin {
     
     public PathFinderAPI () {
 
-        this.adventure = BukkitAudiences.create(this);
         this.configManager = new ConfigManager(this);
         this.configManager.loadConfigFiles();
     }
@@ -36,6 +35,7 @@ public final class PathFinderAPI extends JavaPlugin {
     @Override
     public void onEnable () {
 
+        this.adventure = BukkitAudiences.create(this);
         new PathAPIMessager(this, this.configManager);
         new BlockManager(this.configManager);
 

@@ -267,16 +267,16 @@ public class Greedy extends PathFinder {
             List<RoadCoordinate> neighbors = new ArrayList<>();
 
             RoadCoordinate posX = getOrCreateCoordinateIncline(coordinateLocation.getX() + 1, coordinateLocation.getY(), coordinateLocation.getZ(), coordinateMap);
-            if (posX != null) this.neighbors.add(posX);
+            if (posX != null) neighbors.add(posX);
 
             RoadCoordinate negX = getOrCreateCoordinateIncline(coordinateLocation.getX() - 1, coordinateLocation.getY(), coordinateLocation.getZ(), coordinateMap);
-            if (negX != null) this.neighbors.add(negX);
+            if (negX != null) neighbors.add(negX);
 
             RoadCoordinate posZ = getOrCreateCoordinateIncline(coordinateLocation.getX(), coordinateLocation.getY(), coordinateLocation.getZ() + 1, coordinateMap);
-            if (posZ != null) this.neighbors.add(posZ);
+            if (posZ != null) neighbors.add(posZ);
 
             RoadCoordinate negZ = getOrCreateCoordinateIncline(coordinateLocation.getX(), coordinateLocation.getY(), coordinateLocation.getZ() - 1, coordinateMap);
-            if (negZ != null) this.neighbors.add(negZ);
+            if (negZ != null) neighbors.add(negZ);
 
             this.neighbors = neighbors;
             return this.neighbors;
