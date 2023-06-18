@@ -46,13 +46,13 @@ public class FindCommand {
                     pathFuture.whenComplete((integer, error) -> { if (pathFuture.isCompletedExceptionally()) { System.out.println("Could not find path."); } })
                         .thenAccept(list -> {
 
-                            PathAPIMessager.info("Path of length " + list.size() + " found in " + (System.currentTimeMillis() - startTime) + " ms.");
+                            PathAPIMessager.debug("Path of length " + list.size() + " found in " + (System.currentTimeMillis() - startTime) + " ms.");
                             PathAPIMessager.debug("Optimizing path... ");
 
                             LinkedList<Coordinate> path = new LinkedList<>(list);
-                            WindowOptimizer optimizer = new WindowOptimizer(path, player.getWorld(), pathFinder);
+                            WindowOptimizer windowOptimizer = new WindowOptimizer(path, player.getWorld(), pathFinder);
                             PathAPIMessager.debug("Initial length: " + path.size() + ".");
-                            optimizer.stepOptimize();
+                            windowOptimizer.optimize();
 
                             PathAPIMessager.debug("Final length: " + path.size() + ".");
 

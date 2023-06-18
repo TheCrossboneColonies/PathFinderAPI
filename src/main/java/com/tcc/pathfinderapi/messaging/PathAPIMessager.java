@@ -9,12 +9,11 @@ public class PathAPIMessager {
     private static PathFinderAPI pathFinderAPI;
     private static boolean debugEnabled;
 
-    public PathAPIMessager (PathFinderAPI pathFinderAPI_, ConfigManager configManager) {
+    public PathAPIMessager (PathFinderAPI _pathFinderAPI, ConfigManager configManager) {
 
-        pathFinderAPI = pathFinderAPI_;
+        pathFinderAPI = _pathFinderAPI;
         debugEnabled = configManager.getBoolean(ConfigNode.DEBUG_MODE_ENABLED);
     }
-
 
     public static void info (String message) { pathFinderAPI.getLogger().info(message); }
     public static void warn (String message) { pathFinderAPI.getLogger().warning(message); }
