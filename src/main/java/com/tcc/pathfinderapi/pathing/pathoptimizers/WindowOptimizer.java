@@ -38,7 +38,7 @@ public class WindowOptimizer implements PathOptimizer {
      * In its current state, performs all optimizations in a single pass. Do NOT call this synchronously.
      */
     @Override
-    public PathStepResponse stepOptimize () {
+    public PathStepResponse optimize () {
 
         long startTime = System.currentTimeMillis();
 

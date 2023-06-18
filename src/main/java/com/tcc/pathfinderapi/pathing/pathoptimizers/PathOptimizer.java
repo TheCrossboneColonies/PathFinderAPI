@@ -2,4 +2,4 @@ package com.tcc.pathfinderapi.pathing.pathoptimizers;
 
 import com.tcc.pathfinderapi.pathing.PathStepResponse;
 
-public interface PathOptimizer { PathStepResponse stepOptimize(); }
+public interface PathOptimizer { PathStepResponse optimize(); }
