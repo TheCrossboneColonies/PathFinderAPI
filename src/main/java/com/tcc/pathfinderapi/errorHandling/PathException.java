@@ -4,19 +4,15 @@ public class PathException extends Exception {
 
     private String message;
 
-    public PathException() {
-        super("Unknown Path error");
-    }
+    public PathException () { super("Unknown Path Error"); }
 
-    public PathException(String message) {
+    public PathException (String message) {
+
         super(message);
         this.message = message;
     }
 
 
     @Override
-    public String getMessage() {
-        return message;
-    }
-
+    public String getMessage () { return this.message; }
 }

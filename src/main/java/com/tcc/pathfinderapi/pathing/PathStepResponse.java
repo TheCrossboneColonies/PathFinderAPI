@@ -5,28 +5,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Result returned after a pathfinder makes a step
+ * Result returned after a pathfinder makes a step.
  */
 public class PathStepResponse {
 
-    private PathStepResult result;
+
+    private PathStepResult pathStepResult;
     private Map<String, Object> metaData = new HashMap<>();
 
-    public PathStepResponse(PathStepResult result){
-        this.result = result;
-    }
+    public PathStepResponse (PathStepResult pathStepResult) { this.pathStepResult = pathStepResult; }
 
-    public void addMetaData(String key, Object data){
-        metaData.put(key, data);
-    }
+    public void addMetaData (String key, Object data) { this.metaData.put(key, data); }
 
-    public PathStepResult getResult() {
-        return result;
-    }
+    public PathStepResult getResult () { return this.pathStepResult; }
 
     @Nullable
-    public Object getMetaData(String key){
-        return metaData.get(key);
-    }
-
+    public Object getMetaData (String key) { return this.metaData.get(key); }
 }
