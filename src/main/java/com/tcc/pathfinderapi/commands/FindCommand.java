@@ -1,6 +1,5 @@
 package com.tcc.pathfinderapi.commands;
 
-import cloud.commandframework.ArgumentDescription;
 import cloud.commandframework.CommandManager;
 import cloud.commandframework.bukkit.parsers.location.LocationArgument;
 import com.tcc.pathfinderapi.PathFinderAPI;
@@ -27,7 +26,7 @@ public class FindCommand {
     public void registerCommand (CommandManager<CommandSender> commandManager) {
 
         commandManager.command(
-            commandManager.commandBuilder("pathapi", ArgumentDescription.of("Find a path between two locations."))
+            commandManager.commandBuilder("pathapi")
                 .permission("pathapi.find")
                 .literal("find")
                 .argument(LocationArgument.of("start"))
