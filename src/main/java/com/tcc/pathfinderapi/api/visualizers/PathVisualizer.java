@@ -1,4 +1,4 @@
-package com.tcc.pathfinderapi.api;
+package com.tcc.pathfinderapi.api.visualizers;
 
 import java.util.LinkedList;
 
@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 import com.tcc.pathfinderapi.objects.Coordinate;
 
-interface PathVisualizer {
+public interface PathVisualizer {
     
     /**
      * Called when the path is first generated.
