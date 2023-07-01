@@ -138,8 +138,8 @@ class RelativePathAwaiter implements Runnable {
                 if (this.player.getLocation().distance(location) < this.player.getLocation().distance(closestLocation)) { closetCoordinate = coordinate; }
             }
 
-            Location cloestLocation = new Location(this.player.getWorld(), closetCoordinate.getX(), closetCoordinate.getY(), closetCoordinate.getZ());
-            if (this.player.getLocation().distance(cloestLocation) > 20) { break; }
+            Location closestLocation = new Location(this.player.getWorld(), closetCoordinate.getX(), closetCoordinate.getY(), closetCoordinate.getZ());
+            if (this.player.getLocation().distance(closestLocation) > 20) { break; }
             if (this.fullPath.getLast() == closetCoordinate) { break; }
 
             int closestCoordinateIndex = this.relativePath.indexOf(closetCoordinate);

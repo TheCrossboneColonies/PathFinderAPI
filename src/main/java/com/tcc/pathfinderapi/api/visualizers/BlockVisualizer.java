@@ -2,6 +2,7 @@ package com.tcc.pathfinderapi.api.visualizers;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -12,7 +13,7 @@ import com.tcc.pathfinderapi.objects.Coordinate;
 
 public class BlockVisualizer implements PathVisualizer {
     
-    private HashMap<Coordinate, BlockData> blockData;
+    private Map<Coordinate, BlockData> blockData;
 
     @Override
     public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {

@@ -2,6 +2,7 @@ package com.tcc.pathfinderapi.api.visualizers;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -16,7 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class ParticleVisualizer implements PathVisualizer {
 
     private boolean pathCompleted;
-    private ArrayList<Coordinate> particleCoordinates;
+    private List<Coordinate> particleCoordinates;
 
     @Override
     public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
