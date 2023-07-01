@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
@@ -26,12 +27,12 @@ public class BlockManager {
     public static Material getBlockType (World world, Coordinate coordinate) { return getBlockType(world, coordinate.getX(), coordinate.getY(), coordinate.getZ()); }
 
     public static Material getBlockType (World world, int x, int y, int z) {
-
+        
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
 
-        int chunkCoordinateX = (x & 0xF) + ((x >> 31) & 0x10);
-        int chunkCoordinateZ = (z & 0xF) + ((z >> 31) & 0x10);
+        int chunkCoordinateX = (x & 0xF);
+        int chunkCoordinateZ = (z & 0xF);
 
         ChunkSnapshot chunkSnapshot = getChunkSnapshot(world, chunkX, chunkZ);
         return chunkSnapshot.getBlockType(chunkCoordinateX, y, chunkCoordinateZ);

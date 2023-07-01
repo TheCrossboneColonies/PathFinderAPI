@@ -18,7 +18,10 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitWorker;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -26,6 +29,7 @@ public final class PathFinderAPI extends JavaPlugin {
 
     private BukkitAudiences adventure;
     private ConfigManager configManager;
+    public static ArrayList<Integer> scheduledTaskIDs = new ArrayList<Integer>();
     
     public PathFinderAPI () {
 
@@ -107,5 +111,8 @@ public final class PathFinderAPI extends JavaPlugin {
 
         this.adventure.close();
         this.adventure = null;
+
+        BukkitScheduler bukkitScheduler = Bukkit.getScheduler();
+        for (int scheduledTaskID : scheduledTaskIDs) { bukkitScheduler.cancelTask(scheduledTaskID); }
     }
 }

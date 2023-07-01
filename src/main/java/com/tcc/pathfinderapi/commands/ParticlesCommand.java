@@ -6,7 +6,6 @@ import org.bukkit.entity.Player;
 
 import com.tcc.pathfinderapi.api.Path;
 import com.tcc.pathfinderapi.api.visualizers.ParticleVisualizer;
-import com.tcc.pathfinderapi.api.visualizers.PathVisualizer;
 
 import cloud.commandframework.ArgumentDescription;
 import cloud.commandframework.CommandManager;
@@ -21,7 +20,7 @@ public class ParticlesCommand {
         commandManager.command(
             commandManager.commandBuilder("pathapi", ArgumentDescription.of("Find a path between two locations."))
                 .permission("pathapi.find.particles")
-                .literal("find particles")
+                .literal("particles")
                 .argument(LocationArgument.of("start"))
                 .argument(LocationArgument.of("end"))
                 .senderType(Player.class)
@@ -31,8 +30,8 @@ public class ParticlesCommand {
                     Location start = context.get("start");
                     Location end = context.get("end");
 
-                    PathVisualizer particleVisualizer = new ParticleVisualizer();
-                    new Path(player, start, end).withPathVisualizer(particleVisualizer);
+                    Path path =  new Path(new ParticleVisualizer(), player, start, end);
+                    path.generatePath();
                 })
         );
     }
