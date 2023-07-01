@@ -7,7 +7,8 @@ import cloud.commandframework.execution.CommandExecutionCoordinator;
 import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
 import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
 import cloud.commandframework.minecraft.extras.MinecraftHelp;
-import com.tcc.pathfinderapi.commands.FindCommand;
+import com.tcc.pathfinderapi.commands.BlocksCommand;
+import com.tcc.pathfinderapi.commands.ParticlesCommand;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.pathing.BlockManager;
@@ -92,7 +93,8 @@ public final class PathFinderAPI extends JavaPlugin {
                     .handler(commandConfirmationManager.createConfirmationExecutionHandler())
             );
 
-            new FindCommand(this).registerCommand(commandManager);
+            new BlocksCommand().registerCommand(commandManager);
+            new ParticlesCommand().registerCommand(commandManager);
         } catch (Exception exception) {
 
             exception.printStackTrace();
