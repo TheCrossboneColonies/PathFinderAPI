@@ -47,8 +47,10 @@ public class Path {
     public Path withPathVisualizer (PathVisualizer pathVisualizer) {
 
         this.pathVisualizer = pathVisualizer;
-        this.pathVisualizer.initalizePath(this.player, this.fullPath);
-        
+        RelativePathUpdater relativePathUpdater = relativePath -> this.relativePath = relativePath;
+        PathVisualizerDispatcher pathVisualizerDispatcher = new PathVisualizerDispatcher(this.player, this.pathVisualizer, this.fullPath, relativePathUpdater);
+
+        new Thread(pathVisualizerDispatcher).start();
         return this;
     }
 
@@ -59,4 +61,65 @@ public class Path {
     public PathVisualizer getPathVisualizer () { return this.pathVisualizer; }
     public LinkedList<Coordinate> getFullPath () { return this.fullPath; }
     public LinkedList<Coordinate> getRelativePath () { return this.relativePath; }
+}
+
+interface RelativePathUpdater { public void updateRelativePath (LinkedList<Coordinate> relativePath); }
+class PathVisualizerDispatcher implements Runnable {
+
+    private Player player;
+    private PathVisualizer pathVisualizer;
+    private LinkedList<Coordinate> fullPath;
+    private LinkedList<Coordinate> relativePath;
+    private RelativePathUpdater relativePathUpdater;
+
+    public PathVisualizerDispatcher (Player player, PathVisualizer pathVisualizer, LinkedList<Coordinate> fullPath, RelativePathUpdater relativePathUpdater) {
+
+        this.player = player;
+        this.pathVisualizer = pathVisualizer;
+
+        this.fullPath = fullPath;
+        this.relativePath = (LinkedList<Coordinate>) this.fullPath.subList(0, 12);
+        this.relativePathUpdater = relativePathUpdater;
+    }
+
+    @Override
+    public void run () {
+
+        this.pathVisualizer.initalizePath(this.player, this.fullPath);
+        this.pathVisualizer.interpretNewPath(this.player, this.relativePath);
+
+        while (true) {
+
+            Coordinate closetCoordinate = this.relativePath.getFirst();
+
+            for (Coordinate coordinate : this.relativePath) {
+
+                Location location = new Location(this.player.getWorld(), coordinate.getX(), coordinate.getY(), coordinate.getZ());
+                Location closestLocation = new Location(this.player.getWorld(), closetCoordinate.getX(), closetCoordinate.getY(), closetCoordinate.getZ());
+                if (this.player.getLocation().distance(location) < this.player.getLocation().distance(closestLocation)) { closetCoordinate = coordinate; }
+            }
+
+            Location cloestLocation = new Location(this.player.getWorld(), closetCoordinate.getX(), closetCoordinate.getY(), closetCoordinate.getZ());
+            if (this.player.getLocation().distance(cloestLocation) > 20) { break; }
+            if (this.fullPath.getLast() == closetCoordinate) { break; }
+
+            int closestCoordinateIndex = this.relativePath.indexOf(closetCoordinate);
+            if (closestCoordinateIndex >= 8) {
+
+                this.pathVisualizer.interpretOldPath(this.player, this.relativePath);
+
+                int initialIndex = this.fullPath.indexOf(this.relativePath.getFirst());
+                this.relativePath = (LinkedList<Coordinate>) this.fullPath.subList(initialIndex + closestCoordinateIndex, closestCoordinateIndex + 12);
+
+                this.pathVisualizer.interpretNewPath(this.player, this.relativePath);
+                this.relativePathUpdater.updateRelativePath(this.relativePath);
+            }
+
+            try { Thread.sleep(100); } 
+            catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
+        }
+
+        this.pathVisualizer.interpretNewPath(this.player, this.relativePath);
+        this.pathVisualizer.clearPath(this.player, this.fullPath);
+    }
 }
