@@ -104,7 +104,7 @@ class PathVisualizerDispatcher implements Runnable {
             if (this.fullPath.getLast() == closetCoordinate) { break; }
 
             int closestCoordinateIndex = this.relativePath.indexOf(closetCoordinate);
-            if (closestCoordinateIndex >= 8) {
+            if (closestCoordinateIndex >= 7) {
 
                 this.pathVisualizer.interpretOldPath(this.player, this.relativePath);
 
