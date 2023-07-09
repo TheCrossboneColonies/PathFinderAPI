@@ -70,7 +70,16 @@ public class Path {
     public LinkedList<Coordinate> getRelativePath () { return this.relativePath; }
 }
 
+/**
+ * This class is used to create a callback updater method for the 
+ * PathVisualizerDispatcher back to the Path.
+ */
 interface RelativePathUpdater { public void updateRelativePath (LinkedList<Coordinate> relativePath); }
+
+/**
+ * This class is used to dispatch a PathVisualizer to a given path
+ * on a separate thread as to not freeze server activities.
+ */
 class PathVisualizerDispatcher implements Runnable {
 
     private Player player;
@@ -107,6 +116,11 @@ class PathVisualizerDispatcher implements Runnable {
     }
 }
 
+/**
+ * This class is used to handle the updating and handling of
+ * a relative path, which needs to be constantly monitored
+ * on a separate thread as to not freeze server activities.
+ */
 class RelativePathAwaiter implements Runnable {
 
     private Player player;
