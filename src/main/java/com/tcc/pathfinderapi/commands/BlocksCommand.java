@@ -16,7 +16,7 @@ public class BlocksCommand {
     public void registerCommand (CommandManager<CommandSender> commandManager) {
 
         commandManager.command(
-            commandManager.commandBuilder("pathapi", ArgumentDescription.of("Find a path between two locations."))
+            commandManager.commandBuilder("pathapi find", ArgumentDescription.of("Find a path between two locations of a world using a block visualization."))
                 .permission("pathapi.find.blocks")
                 .literal("blocks")
                 .argument(LocationArgument.of("start"))
