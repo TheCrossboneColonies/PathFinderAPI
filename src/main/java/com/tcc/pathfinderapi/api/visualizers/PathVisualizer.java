@@ -18,6 +18,7 @@ public interface PathVisualizer {
 
     /**
      * Called when the player passes an old relative area of the path.
+     * By old relative area, we mean a small section of the path that has already been passed.
      * Should be used to update the player/path from the old area, as well as update any data structures.
      * @param player The player who is being shown the path.
      * @param relativePath The old relative path that was generated.
@@ -26,6 +27,7 @@ public interface PathVisualizer {
 
     /**
      * Called when the player reaches a new relative area of the path.
+     * By new relative area, we mean a small section of the path that has not yet been passed.
      * Should be used to update the player/path for the new area, as well as update any data structures.
      * @param player The player who is being shown the path.
      * @param relativePath The new relative path that was generated.
