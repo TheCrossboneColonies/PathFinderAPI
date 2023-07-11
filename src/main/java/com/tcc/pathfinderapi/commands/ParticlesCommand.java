@@ -18,8 +18,9 @@ public class ParticlesCommand {
     public void registerCommand (CommandManager<CommandSender> commandManager) {
 
         commandManager.command(
-            commandManager.commandBuilder("pathapi find", ArgumentDescription.of("Find a path between two locations of a world using a particle visualization."))
+            commandManager.commandBuilder("pathapi", ArgumentDescription.of("Find a path between two locations of a world using a particle visualization."))
                 .permission("pathapi.find.particles")
+                .literal("find")
                 .literal("particles")
                 .argument(LocationArgument.of("start"))
                 .argument(LocationArgument.of("end"))
