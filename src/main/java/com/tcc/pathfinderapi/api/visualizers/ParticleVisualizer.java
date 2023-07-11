@@ -38,11 +38,8 @@ public class ParticleVisualizer implements PathVisualizer {
                         player.spawnParticle(Particle.REDSTONE, particleCoordinate.getX(), particleCoordinate.getY() + 2.5, particleCoordinate.getZ(), 50, dustOptions);
                     }
 
-                    new BukkitRunnable() {
-
-                        @Override
-                        public void run () {}
-                    }.runTaskTimerAsynchronously(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), 0, 2);
+                    try { Thread.sleep(100); }
+                    catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
                 }
             }
         }.runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("PathFinderAPI"));

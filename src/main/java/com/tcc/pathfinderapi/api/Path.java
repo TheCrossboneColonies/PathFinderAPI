@@ -177,11 +177,6 @@ class RelativePathAwaiter implements Runnable {
                 PathFinderAPI.scheduledTaskIDs.add(taskID);
             }
 
-            new BukkitRunnable() {
-
-                @Override
-                public void run () {}
-            }.runTaskTimerAsynchronously(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), 0, closestCoordinateIndex)
             try { Thread.sleep(100); }
             catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
         }
