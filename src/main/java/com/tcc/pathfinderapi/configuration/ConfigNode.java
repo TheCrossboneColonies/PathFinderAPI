@@ -6,7 +6,7 @@ public enum ConfigNode {
     PERFORMANCE_CHUNK_INVALIDATION_TIME("config.yml", "performance.chunk_invalidation_time"),
 
     BLOCK_VISUALIZER_BLOCK_TYPE("config.yml", "visualizers.block.block_type"),
-    BLOCK_VISUALIZER_MAX_BLOCKS("config.yml", "visualizers.block.max_blocks"),
+    BLOCK_VISUALIZER_BLOCK_DELAY("config.yml", "visualizers.block.block_delay"),
 
     PARTICLE_VISUALIZER_PARTICLE_COLOR("config.yml", "visualizers.particle.particle_color"),
     PARTICLE_VISUALIZER_PARTICLE_EVERY("config.yml", "visualizers.particle..particle_every"),

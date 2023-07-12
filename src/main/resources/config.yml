@@ -15,9 +15,11 @@ visualizers:
     # Default: "GOLD_BLOCK"
     block_type: "GOLD_BLOCK"
     
-    # The maximum number of blocks to visualize each second.
-    # Default: 20
-    max_blocks: 20
+    # The tick delay between updating blocks when visualizing the path.
+    # This can be set to zero, but no delay between updating the blocks.
+    # Since block generation is done asynchronously, this factor will not cause lag.
+    # Default: 2
+    block_delay: 2
   particle:
     # The particle color to use when visualizing the path.
     # Default: RGB(255, 255, 0)

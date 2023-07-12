@@ -23,27 +23,20 @@ public class BlockVisualizer implements PathVisualizer {
     public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.blockData = new HashMap<Coordinate, BlockData>();
-        List<List<Coordinate>> partitions;
 
-        if (this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_MAX_BLOCKS) == 0) { partitions = Collections.singletonList(fullPath); }
-        else { partitions = Lists.partition(fullPath, this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_MAX_BLOCKS)); }
-
-        for (List<Coordinate> partition : partitions) {
+        for (Coordinate coordinate : fullPath) {
 
             new BukkitRunnable() {
 
                 @Override
                 public void run () {
 
-                    for (Coordinate coordinate : partition) {
+                    Block block = player.getWorld().getBlockAt(coordinate.getX(), coordinate.getY(), coordinate.getZ());
+                    blockData.put(coordinate, block.getBlockData());
 
-                        Block block = player.getWorld().getBlockAt(coordinate.getX(), coordinate.getY(), coordinate.getZ());
-                        blockData.put(coordinate, block.getBlockData());
-
-                        block.setType(Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE)));
-                    }
+                    block.setType(Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE)));
                 }
-            }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), partitions.indexOf(partition) * 20);
+            }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_BLOCK_DELAY) * fullPath.indexOf(coordinate));
         }
     }
 
