@@ -8,6 +8,11 @@ performance:
   # Default: 10000
   chunk_invalidation_time: 10000
 
+  # The radius in which the relative path area is drawn from when visualizing path generation.
+  # Meaning, path visualizers will constantly be fed relative paths containing coordinates within this given radius.
+  # Default: 12
+  relative_radius: 12
+
 visualizers:
   block:
     # The block type to use for visualizing the path, a list of block types can be found here:
@@ -28,7 +33,7 @@ visualizers:
       green: 255
       blue: 0
 
-    # The number of blocks between each particle when visualizing the path.
-    # This value can impact performance, a higher value means that there will be less particles to render.
-    # Default: 6
-    particle_every: 6
+    # The number of blocks between the player and the next particle node.
+    # While less lead will result in an easier following experience, it causes more visual confusion when the particle moves.
+    # Default: 4
+    particle_lead: 4
