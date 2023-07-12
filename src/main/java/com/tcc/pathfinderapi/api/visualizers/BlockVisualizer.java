@@ -1,9 +1,6 @@
 package com.tcc.pathfinderapi.api.visualizers;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,7 +23,10 @@ public class BlockVisualizer implements PathVisualizer {
     public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.blockData = new HashMap<Coordinate, BlockData>();
-        List<List<Coordinate>> partitions = Lists.partition(fullPath, this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_MAX_BLOCKS));
+        List<List<Coordinate>> partitions;
+
+        if (this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_MAX_BLOCKS) == 0) { partitions = Collections.singletonList(fullPath); }
+        else { partitions = Lists.partition(fullPath, this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_MAX_BLOCKS)); }
 
         for (List<Coordinate> partition : partitions) {
 
@@ -43,7 +43,7 @@ public class BlockVisualizer implements PathVisualizer {
                         block.setType(Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE)));
                     }
                 }
-            }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), 20);
+            }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), partitions.indexOf(partition) * 20);
         }
     }
 
