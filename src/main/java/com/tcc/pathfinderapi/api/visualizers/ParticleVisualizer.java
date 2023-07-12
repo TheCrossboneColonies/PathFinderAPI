@@ -5,12 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.entity.Player;
 
+import com.tcc.pathfinderapi.configuration.ConfigManager;
+import com.tcc.pathfinderapi.configuration.ConfigNode;
 import com.tcc.pathfinderapi.objects.Coordinate;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -18,6 +19,7 @@ public class ParticleVisualizer implements PathVisualizer {
 
     private boolean pathCompleted;
     private List<Coordinate> particleCoordinates;
+    private ConfigManager configManager = ConfigManager.getInstance();;
 
     @Override
     public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
@@ -34,7 +36,7 @@ public class ParticleVisualizer implements PathVisualizer {
 
                     for (Coordinate particleCoordinate : particleCoordinates) {
 
-                        DustOptions dustOptions = new DustOptions(Color.YELLOW, 1.0F);
+                        DustOptions dustOptions = new DustOptions(configManager.getColor(ConfigNode.PARTICLE_VISUALIZER_PARTICLE_COLOR), 1.0F);
                         player.spawnParticle(Particle.REDSTONE, particleCoordinate.getX(), particleCoordinate.getY() + 2.5, particleCoordinate.getZ(), 50, dustOptions);
                     }
 
@@ -53,7 +55,16 @@ public class ParticleVisualizer implements PathVisualizer {
     }
 
     @Override
-    public void interpretNewPath (Player player, LinkedList<Coordinate> relativePath) { this.particleCoordinates.add(relativePath.get(Math.min(7, relativePath.size() - 1))); }
+    public void interpretNewPath (Player player, LinkedList<Coordinate> relativePath) { 
+        
+        for (int i = 1; i < relativePath.size(); i++) {
+
+            if (i % this.configManager.getInt(ConfigNode.PARTICLE_VISUALIZER_PARTICLE_EVERY) == 0) {
+
+                this.particleCoordinates.add(relativePath.get(i));
+            }
+        }
+    }
 
     @Override
     public void clearPath (Player player, LinkedList<Coordinate> fullPath) { this.pathCompleted = true; }

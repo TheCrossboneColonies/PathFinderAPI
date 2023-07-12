@@ -5,6 +5,12 @@ public enum ConfigNode {
     DEBUG_MODE_ENABLED("config.yml", "debug_mode_enabled"),
     PERFORMANCE_CHUNK_INVALIDATION_TIME("config.yml", "performance.chunk_invalidation_time"),
 
+    BLOCK_VISUALIZER_BLOCK_TYPE("config.yml", "block_visualizer.block_type"),
+    BLOCK_VISUALIZER_MAX_BLOCKS("config.yml", "block_visualizer.max_blocks"),
+
+    PARTICLE_VISUALIZER_PARTICLE_COLOR("config.yml", "particle_visualizer.particle_color"),
+    PARTICLE_VISUALIZER_PARTICLE_EVERY("config.yml", "particle_visualizer.particle_every"),
+
     MESSAGES_PREFIX("lang.yml","messages.prefix");
 
     private final String FILE_PATH;

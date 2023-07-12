@@ -2,8 +2,31 @@
 debug_mode_enabled: false
 
 performance:
-  # Time in milliseconds between checks for block changes in a chunk
-  # Pathfinders operate asynchronously and therefore use copies of block data to pathfind with, not the data itself.
+  # The time in milliseconds between checks for block changes in a chunk.
+  # Pathfinding is done asynchronously and therefore uses copies of block data to pathfind with, not the data itself.
   # A higher value here means better performance, but potential inaccuracy.
-  # Default: 10,000
+  # Default: 10000
   chunk_invalidation_time: 10000
+
+visualizers:
+  block:
+    # The block type to use for visualizing the path, a list of block types can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+    # Default: "GOLD_BLOCK"
+    block_type: "GOLD_BLOCK"
+    
+    # The maximum number of blocks to visualize each second.
+    # Default: 20
+    max_blocks: 20
+  particle:
+    # The particle color to use when visualizing the path.
+    # Default: RGB(255, 255, 0)
+    particle_color:
+      red: 255
+      green: 255
+      blue: 0
+
+    # The number of blocks between each particle when visualizing the path.
+    # This value can impact performance, a higher value means that there will be less particles to render.
+    # Default: 6
+    particle_every: 6
