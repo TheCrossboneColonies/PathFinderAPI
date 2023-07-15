@@ -3,6 +3,7 @@ package com.tcc.pathfinderapi.api;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.CompletableFuture;
 
 import com.tcc.pathfinderapi.PathFinderAPI;
@@ -167,24 +168,41 @@ class RelativePathAwaiter implements Runnable {
         // Maintains the relative path until the player either abandons the path or completes it.
         while (true) {
 
-            Coordinate closestCoordinate = this.relativePath.getFirst();
+            double closestRelativeDistance = 401;
+            int closestRelativeCoordinateIndex = 0;
 
-            for (Coordinate coordinate : this.relativePath) {
+            ListIterator<Coordinate> relativePathIterator = this.relativePath.listIterator();
+            while (relativePathIterator.hasNext()) {
+
+                int coordinateIndex = relativePathIterator.nextIndex();
+                Coordinate coordinate = relativePathIterator.next();
 
                 Location location = new Location(this.player.getWorld(), coordinate.getX(), coordinate.getY(), coordinate.getZ());
-                Location closestLocation = new Location(this.player.getWorld(), closestCoordinate.getX(), closestCoordinate.getY(), closestCoordinate.getZ());
-                if (this.player.getLocation().distance(location) < this.player.getLocation().distance(closestLocation)) { closestCoordinate = coordinate; }
+
+                if (this.player.getLocation().distanceSquared(location) < closestRelativeDistance) {
+
+                    closestRelativeDistance = this.player.getLocation().distanceSquared(location);
+                    closestRelativeCoordinateIndex = coordinateIndex;
+                }
             }
 
-            Location closestLocation = new Location(this.player.getWorld(), closestCoordinate.getX(), closestCoordinate.getY(), closestCoordinate.getZ());
-            if (this.player.getLocation().distance(closestLocation) > 20) { break; }
-            if (this.fullPath.getLast() == closestCoordinate) { break; }
-            LinkedList<Coordinate> newRelativePath = new LinkedList<>();
+            if (closestRelativeDistance > 400) { break; }
+            if (closestRelativeCoordinateIndex == this.relativePath.size() - 1) { break; }
+            int relativeRadius = (int) Math.pow(configManager.getInt(ConfigNode.PERFORMANCE_RELATIVE_RADIUS), 2);
 
-            for (Coordinate coordinate : this.fullPath) {
+            ListIterator<Coordinate> fullPathIterator = this.fullPath.listIterator();
+            LinkedList<Coordinate> newRelativePath = new LinkedList<>();
+            while (fullPathIterator.hasNext()) {
+
+                int coordinateIndex = fullPathIterator.nextIndex();
+                Coordinate coordinate = fullPathIterator.next();
 
                 Location location = new Location(this.player.getWorld(), coordinate.getX(), coordinate.getY(), coordinate.getZ());
-                if (this.player.getLocation().distance(location) <= configManager.getInt(ConfigNode.PERFORMANCE_RELATIVE_RADIUS) && this.fullPath.indexOf(coordinate) >= this.fullPath.indexOf(closestCoordinate)) { newRelativePath.add(coordinate); } // TODO Change 12
+
+                if (this.player.getLocation().distanceSquared(location) <= relativeRadius) {
+
+                    if (coordinateIndex >= closestRelativeCoordinateIndex) { newRelativePath.add(coordinate); }
+                }
             }
 
             if (!Arrays.equals(this.relativePath.toArray(), newRelativePath.toArray())) {

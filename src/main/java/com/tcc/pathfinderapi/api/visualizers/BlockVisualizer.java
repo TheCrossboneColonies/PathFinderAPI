@@ -22,6 +22,7 @@ public class BlockVisualizer implements PathVisualizer {
     public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.blockData = new HashMap<Coordinate, BlockData>();
+        Material material = Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE));
 
         for (Coordinate coordinate : fullPath) {
 
@@ -32,8 +33,7 @@ public class BlockVisualizer implements PathVisualizer {
 
                     Block block = player.getWorld().getBlockAt(coordinate.getX(), coordinate.getY(), coordinate.getZ());
                     blockData.put(coordinate, block.getBlockData());
-
-                    block.setType(Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE)));
+                    block.setType(material);
                 }
             }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_BLOCK_DELAY) * fullPath.indexOf(coordinate));
         }
