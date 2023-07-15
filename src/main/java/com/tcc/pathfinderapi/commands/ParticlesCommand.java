@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 
 import com.tcc.pathfinderapi.api.Path;
 import com.tcc.pathfinderapi.api.visualizers.ParticleVisualizer;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 
 import cloud.commandframework.ArgumentDescription;
 import cloud.commandframework.CommandManager;
@@ -33,6 +34,8 @@ public class ParticlesCommand {
 
                     Path path =  new Path(new ParticleVisualizer(), player, start, end);
                     path.generatePath();
+
+                    PathAPIMessager.player(player, "&aPath Successfully Initialized!");
                 })
         );
     }

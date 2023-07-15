@@ -1,6 +1,5 @@
 package com.tcc.pathfinderapi.api;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import com.tcc.pathfinderapi.PathFinderAPI;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -43,10 +44,10 @@ public class Path {
         PathFinder pathFinder = Greedy.getBuilder(this.start, this.end).build();
         CompletableFuture<List<Coordinate>> pathFuture = pathFinder.run().getPath();
 
-        pathFuture.whenComplete((integer, error) -> { if (pathFuture.isCompletedExceptionally()) { System.out.println("Could not find path."); } })
-                .thenAccept(list -> {
+        pathFuture.whenComplete((integer, error) -> { if (pathFuture.isCompletedExceptionally()) { PathAPIMessager.debug("Could not find path."); } })
+                .thenAccept(unoptimizedPath -> {
 
-                    LinkedList<Coordinate> path = new LinkedList<>(list);
+                    LinkedList<Coordinate> path = new LinkedList<>(unoptimizedPath);
 
                     WindowOptimizer windowOptimizer = new WindowOptimizer(path, this.player.getWorld(), pathFinder);
                     windowOptimizer.optimize();
@@ -69,8 +70,20 @@ public class Path {
     public Location getStart () { return this.start; }
     public Location getEnd () { return this.end; }
 
+    /**
+     * @return The {@link PathVisualizer} responsible for interpreting this path.
+     */
     public PathVisualizer getPathVisualizer () { return this.pathVisualizer; }
+
+    /**
+     * @return The full path that was generated from the start to the end.
+     */
     public LinkedList<Coordinate> getFullPath () { return this.fullPath; }
+
+    /**
+     * @return The relative path that is currently being shown to the player, 
+     * which is a smaller section of the full path that is more relevant to the player.
+     */
     public LinkedList<Coordinate> getRelativePath () { return this.relativePath; }
 }
 
@@ -108,7 +121,7 @@ class PathVisualizerDispatcher implements Runnable {
     @Override
     public void run () {
 
-        this.pathVisualizer.initalizePath(this.player, this.fullPath);
+        this.pathVisualizer.initializePath(this.player, this.fullPath);
         this.pathVisualizer.interpretNewPath(this.player, this.relativePath);
 
         RelativePathUpdater relativePathUpdater = relativePath -> {
@@ -151,6 +164,7 @@ class RelativePathAwaiter implements Runnable {
     @Override
     public void run () {
 
+        // Maintains the relative path until the player either abandons the path or completes it.
         while (true) {
 
             Coordinate closestCoordinate = this.relativePath.getFirst();
@@ -165,8 +179,6 @@ class RelativePathAwaiter implements Runnable {
             Location closestLocation = new Location(this.player.getWorld(), closestCoordinate.getX(), closestCoordinate.getY(), closestCoordinate.getZ());
             if (this.player.getLocation().distance(closestLocation) > 20) { break; }
             if (this.fullPath.getLast() == closestCoordinate) { break; }
-
-            int closestCoordinateIndex = this.relativePath.indexOf(closestCoordinate);
             LinkedList<Coordinate> newRelativePath = new LinkedList<>();
 
             for (Coordinate coordinate : this.fullPath) {
@@ -177,6 +189,7 @@ class RelativePathAwaiter implements Runnable {
 
             if (!Arrays.equals(this.relativePath.toArray(), newRelativePath.toArray())) {
 
+                // Schedules the handling of the new relative path on the main thread.
                 int taskID = new BukkitRunnable() {
 
                     @Override
@@ -196,13 +209,14 @@ class RelativePathAwaiter implements Runnable {
             catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
         }
 
+        // Schedules the final handling of the path on the main thread.
         int taskID = new BukkitRunnable() {
 
             @Override
             public void run () {
 
                 pathVisualizer.interpretOldPath(player, relativePath);
-                pathVisualizer.clearPath(player, fullPath);
+                pathVisualizer.endPath(player, fullPath);
             }
         }.runTask(Bukkit.getPluginManager().getPlugin("PathFinderAPI")).getTaskId();
 

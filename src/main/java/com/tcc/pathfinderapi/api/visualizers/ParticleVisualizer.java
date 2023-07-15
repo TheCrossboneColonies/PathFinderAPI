@@ -22,7 +22,7 @@ public class ParticleVisualizer implements PathVisualizer {
     private ConfigManager configManager = ConfigManager.getInstance();;
 
     @Override
-    public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
+    public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.pathCompleted = false;
         this.particleCoordinates = new ArrayList<Coordinate>();
@@ -66,7 +66,7 @@ public class ParticleVisualizer implements PathVisualizer {
     }
 
     @Override
-    public void clearPath (Player player, LinkedList<Coordinate> fullPath) {
+    public void endPath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.pathCompleted = true;
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);

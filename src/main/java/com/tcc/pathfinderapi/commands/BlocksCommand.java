@@ -5,6 +5,8 @@ import cloud.commandframework.CommandManager;
 import cloud.commandframework.bukkit.parsers.location.LocationArgument;
 import com.tcc.pathfinderapi.api.Path;
 import com.tcc.pathfinderapi.api.visualizers.BlockVisualizer;
+import com.tcc.pathfinderapi.messaging.PathAPIMessager;
+
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -31,6 +33,8 @@ public class BlocksCommand {
 
                     Path path =  new Path(new BlockVisualizer(), player, start, end);
                     path.generatePath();
+
+                    PathAPIMessager.player(player, "&aPath Successfully Initialized!");
                 })
         );
     }

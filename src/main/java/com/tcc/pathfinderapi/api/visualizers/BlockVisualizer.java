@@ -9,7 +9,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.google.common.collect.Lists;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.configuration.ConfigNode;
 import com.tcc.pathfinderapi.objects.Coordinate;
@@ -20,7 +19,7 @@ public class BlockVisualizer implements PathVisualizer {
     private ConfigManager configManager = ConfigManager.getInstance();;
 
     @Override
-    public void initalizePath (Player player, LinkedList<Coordinate> fullPath) {
+    public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
 
         this.blockData = new HashMap<Coordinate, BlockData>();
 
@@ -47,7 +46,7 @@ public class BlockVisualizer implements PathVisualizer {
     public void interpretNewPath (Player player, LinkedList<Coordinate> relativePath) {}
 
     @Override
-    public void clearPath (Player player, LinkedList<Coordinate> fullPath) {
+    public void endPath (Player player, LinkedList<Coordinate> fullPath) {
 
         for (Coordinate coordinate : fullPath) {
 

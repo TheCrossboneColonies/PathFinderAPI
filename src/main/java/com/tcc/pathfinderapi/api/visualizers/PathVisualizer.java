@@ -14,7 +14,7 @@ public interface PathVisualizer {
      * @param player The player who is being shown the path.
      * @param fullPath The full path that was generated.
      */
-    public void initalizePath (Player player, LinkedList<Coordinate> fullPath);
+    public void initializePath (Player player, LinkedList<Coordinate> fullPath);
 
     /**
      * Called when the player passes an old relative area of the path.
@@ -40,5 +40,5 @@ public interface PathVisualizer {
      * @param player The player who is being shown the path.
      * @param fullPath The full path that was generated.
      */
-    public void clearPath (Player player, LinkedList<Coordinate> fullPath);
+    public void endPath (Player player, LinkedList<Coordinate> fullPath);
 }
