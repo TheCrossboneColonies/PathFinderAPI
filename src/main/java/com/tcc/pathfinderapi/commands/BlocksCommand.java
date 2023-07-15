@@ -31,7 +31,7 @@ public class BlocksCommand {
                     Location start = context.get("start");
                     Location end = context.get("end");
 
-                    Path path =  new Path(new BlockVisualizer(), player, start, end);
+                    Path path =  new Path(player, start, end, new BlockVisualizer());
                     path.generatePath();
 
                     PathAPIMessager.player(player, "&aPath Successfully Initialized!");

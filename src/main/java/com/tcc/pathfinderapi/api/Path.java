@@ -24,20 +24,30 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class Path {
 
-    private PathVisualizer pathVisualizer;
     private Player player;
     private Location start;
     private Location end;
 
+    private PathVisualizer pathVisualizer;
     private LinkedList<Coordinate> fullPath;
     private LinkedList<Coordinate> relativePath;
 
-    public Path (PathVisualizer pathVisualizer, Player player, Location start, Location end) {
+    public Path (Player player, Location start, Location end) {
 
-        this.pathVisualizer = pathVisualizer;
         this.player = player;
         this.start = start;
         this.end = end;
+
+        this.pathVisualizer = null;
+    }
+
+    public Path (Player player, Location start, Location end, PathVisualizer pathVisualizer) {
+
+        this.player = player;
+        this.start = start;
+        this.end = end;
+
+        this.pathVisualizer = pathVisualizer;
     }
 
     public void generatePath () {
@@ -54,7 +64,7 @@ public class Path {
                     windowOptimizer.optimize();
 
                     this.fullPath = path;
-                    this.activatePathVisualizer();
+                    if (this.pathVisualizer != null) { this.activatePathVisualizer(); }
                 });
     }
 

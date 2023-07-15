@@ -32,7 +32,7 @@ public class ParticlesCommand {
                     Location start = context.get("start");
                     Location end = context.get("end");
 
-                    Path path =  new Path(new ParticleVisualizer(), player, start, end);
+                    Path path =  new Path(player, start, end, new ParticleVisualizer());
                     path.generatePath();
 
                     PathAPIMessager.player(player, "&aPath Successfully Initialized!");
