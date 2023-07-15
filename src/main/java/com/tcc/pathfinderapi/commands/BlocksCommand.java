@@ -34,7 +34,7 @@ public class BlocksCommand {
                     Path path =  new Path(player, start, end, new BlockVisualizer());
                     path.generatePath();
 
-                    PathAPIMessager.player(player, "&aPath Successfully Initialized!");
+                    PathAPIMessager.player(player, "&eGenerating Path...");
                 })
         );
     }

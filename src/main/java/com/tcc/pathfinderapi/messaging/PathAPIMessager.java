@@ -21,7 +21,7 @@ public class PathAPIMessager {
     public static void info (String message) { pathFinderAPI.getLogger().info(message); }
     public static void warn (String message) { pathFinderAPI.getLogger().warning(message); }
     public static void severe (String message) { pathFinderAPI.getLogger().severe(message); }
-    public static void player (Player player, String message) { player.sendMessage(ChatColor.translateAlternateColorCodes('&', "§")); }
+    public static void player (Player player, String message) { player.sendMessage(ChatColor.translateAlternateColorCodes('&', message)); }
 
     /**
      * Log debug messages to show flow of a program.
