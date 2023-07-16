@@ -7,7 +7,8 @@ import cloud.commandframework.execution.CommandExecutionCoordinator;
 import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
 import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
 import cloud.commandframework.minecraft.extras.MinecraftHelp;
-import com.tcc.pathfinderapi.commands.FindCommand;
+import com.tcc.pathfinderapi.commands.BlocksCommand;
+import com.tcc.pathfinderapi.commands.ParticlesCommand;
 import com.tcc.pathfinderapi.configuration.ConfigManager;
 import com.tcc.pathfinderapi.messaging.PathAPIMessager;
 import com.tcc.pathfinderapi.pathing.BlockManager;
@@ -17,7 +18,9 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -25,6 +28,7 @@ public final class PathFinderAPI extends JavaPlugin {
 
     private BukkitAudiences adventure;
     private ConfigManager configManager;
+    public static ArrayList<Integer> scheduledTaskIDs = new ArrayList<Integer>();
     
     public PathFinderAPI () {
 
@@ -92,7 +96,8 @@ public final class PathFinderAPI extends JavaPlugin {
                     .handler(commandConfirmationManager.createConfirmationExecutionHandler())
             );
 
-            new FindCommand(this).registerCommand(commandManager);
+            new BlocksCommand().registerCommand(commandManager);
+            new ParticlesCommand().registerCommand(commandManager);
         } catch (Exception exception) {
 
             exception.printStackTrace();
@@ -105,5 +110,8 @@ public final class PathFinderAPI extends JavaPlugin {
 
         this.adventure.close();
         this.adventure = null;
+
+        BukkitScheduler bukkitScheduler = Bukkit.getScheduler();
+        for (int scheduledTaskID : scheduledTaskIDs) { bukkitScheduler.cancelTask(scheduledTaskID); }
     }
 }

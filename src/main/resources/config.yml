@@ -2,8 +2,38 @@
 debug_mode_enabled: false
 
 performance:
-  # Time in milliseconds between checks for block changes in a chunk
-  # Pathfinders operate asynchronously and therefore use copies of block data to pathfind with, not the data itself.
+  # The time in milliseconds between checks for block changes in a chunk.
+  # Pathfinding is done asynchronously and therefore uses copies of block data to pathfind with, not the data itself.
   # A higher value here means better performance, but potential inaccuracy.
-  # Default: 10,000
+  # Default: 10000
   chunk_invalidation_time: 10000
+
+  # The radius in which the relative path area is drawn from when visualizing path generation.
+  # Meaning, path visualizers will constantly be fed relative paths containing coordinates within this given radius.
+  # Default: 12
+  relative_radius: 12
+
+visualizers:
+  block:
+    # The block type to use for visualizing the path, a list of block types can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+    # Default: "GOLD_BLOCK"
+    block_type: "GOLD_BLOCK"
+    
+    # The tick delay between updating blocks when visualizing the path.
+    # This can be set to zero, but no delay between updating the blocks.
+    # Since block generation is done asynchronously, this factor will not cause lag.
+    # Default: 2
+    block_delay: 2
+  particle:
+    # The particle color to use when visualizing the path.
+    # Default: RGB(255, 255, 0)
+    particle_color:
+      red: 255
+      green: 255
+      blue: 0
+
+    # The number of blocks between the player and the next particle node.
+    # While less lead will result in an easier following experience, it causes more visual confusion when the particle moves.
+    # Default: 4
+    particle_lead: 4

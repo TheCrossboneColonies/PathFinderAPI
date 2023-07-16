@@ -26,7 +26,7 @@ public class BlockManager {
     public static Material getBlockType (World world, Coordinate coordinate) { return getBlockType(world, coordinate.getX(), coordinate.getY(), coordinate.getZ()); }
 
     public static Material getBlockType (World world, int x, int y, int z) {
-
+        
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
 

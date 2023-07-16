@@ -2,6 +2,7 @@ package com.tcc.pathfinderapi.configuration;
 
 import com.tcc.pathfinderapi.PathFinderAPI;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -21,6 +22,9 @@ public class ConfigManager {
     private PathFinderAPI pathFinderAPI;
     private Map<String, YamlConfiguration> configs = new HashMap<>();
 
+    private static ConfigManager configManager = null;
+    public static ConfigManager getInstance () { return configManager; }
+
     /**
      * This value is updated whenever a change to any configuration file is made.
      */
@@ -36,6 +40,7 @@ public class ConfigManager {
                 "lang.yml"
         );
 
+        configManager = this;
     }
 
     public void loadConfigFiles () {
@@ -132,6 +137,16 @@ public class ConfigManager {
 
         YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
         return yamlConfiguration.getLocation(configNode.getRoot());
+    }
+
+    public Color getColor (ConfigNode configNode) {
+
+        YamlConfiguration yamlConfiguration = configs.get(configNode.getFilePath());
+        int red = yamlConfiguration.getInt(configNode.getRoot() + ".red");
+        int green = yamlConfiguration.getInt(configNode.getRoot() + ".green");
+        int blue = yamlConfiguration.getInt(configNode.getRoot() + ".blue");
+
+        return Color.fromRGB(red, green, blue);
     }
 
     public String getMessage (ConfigNode messageNode) { return ChatColor.translateAlternateColorCodes('&', getString(ConfigNode.MESSAGES_PREFIX) + " " + getString(messageNode)); }
