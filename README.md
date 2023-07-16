@@ -18,7 +18,7 @@ While PathFinderAPI is intended to be utilized as an extension of other plugins,
 - `/pathapi find particles [Start; X Y Z] [End; X Y Z]` - Finds a path between two locations of a world using a particle visualization.
 
 ### Permissions
-- `pathapi.find.*` - Allows usage of all the `/pathapi find`` commands.
+- `pathapi.find.*` - Allows usage of all the `/pathapi find` commands.
     - `pathapi.find.blocks` - Allows usage of the `/pathapi find blocks` command.
     - `pathapi.find.particles` - Allows usage of the `/pathapi find particles` command.
 
@@ -45,114 +45,8 @@ player.sendMessage(path.fullPath.size());
 
 While generating a path is fun and all, the real excitement comes from actually being able to manipulate player and world data based on the outcomes of path generation. This all happens through the `com.tcc.pathfinderapi.api.visualizers.PathVisualizer` interface. Here are two examples that are included in PathFinderAPI as default visualizers.
 
-**Block Visualizer:**
-```java
-public class BlockVisualizer implements PathVisualizer {
-    
-    private Map<Coordinate, BlockData> blockData;
-    private ConfigManager configManager = ConfigManager.getInstance();
-
-    @Override
-    public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
-
-        this.blockData = new HashMap<Coordinate, BlockData>();
-        Material material = Material.matchMaterial(configManager.getString(ConfigNode.BLOCK_VISUALIZER_BLOCK_TYPE));
-
-        for (Coordinate coordinate : fullPath) {
-
-            new BukkitRunnable() {
-
-                @Override
-                public void run () {
-
-                    Block block = player.getWorld().getBlockAt(coordinate.getX(), coordinate.getY(), coordinate.getZ());
-                    blockData.put(coordinate, block.getBlockData());
-                    block.setType(material);
-                }
-            }.runTaskLater(Bukkit.getPluginManager().getPlugin("PathFinderAPI"), this.configManager.getInt(ConfigNode.BLOCK_VISUALIZER_BLOCK_DELAY) * fullPath.indexOf(coordinate));
-        }
-    }
-
-    @Override
-    public void interpretOldPath (Player player, LinkedList<Coordinate> relativePath) {}
-
-    @Override
-    public void interpretNewPath (Player player, LinkedList<Coordinate> relativePath) {}
-
-    @Override
-    public void endPath (Player player, LinkedList<Coordinate> fullPath) {
-
-        for (Coordinate coordinate : fullPath) {
-
-            Block block = player.getWorld().getBlockAt(coordinate.getX(), coordinate.getY(), coordinate.getZ());
-            block.setBlockData(this.blockData.get(coordinate));
-        }
-    }
-}
-```
-
-**Particle Visualizer:**
-```java
-public class ParticleVisualizer implements PathVisualizer {
-
-    private boolean pathCompleted;
-    private List<Coordinate> particleCoordinates;
-    private List<Coordinate> oldParticleCoordinates;
-    private Map<Coordinate, Double> oldParticleHeightAdditions;
-    private ConfigManager configManager = ConfigManager.getInstance();
-
-    @Override
-    public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
-
-        this.pathCompleted = false;
-        this.particleCoordinates = new ArrayList<Coordinate>();
-        this.oldParticleCoordinates = new ArrayList<Coordinate>();
-        this.oldParticleHeightAdditions = new HashMap<Coordinate, Double>();
-
-        new BukkitRunnable() {
-
-            @Override
-            public void run () {
-
-                while (!pathCompleted) {
-
-                    for (Coordinate particleCoordinate : particleCoordinates) {
-
-                        double heightAddition = oldParticleHeightAdditions.getOrDefault(particleCoordinate, 1.25);
-                        if (oldParticleCoordinates.contains(particleCoordinate)) { heightAddition += 0.025; }
-                        if (heightAddition > 2.0) { heightAddition = 1.25; }
-                        oldParticleHeightAdditions.put(particleCoordinate, heightAddition);
-
-                        DustOptions dustOptions = new DustOptions(configManager.getColor(ConfigNode.PARTICLE_VISUALIZER_PARTICLE_COLOR), 1.0F);
-                        player.spawnParticle(Particle.REDSTONE, particleCoordinate.getX(), particleCoordinate.getY() + heightAddition, particleCoordinate.getZ(), 50, dustOptions);
-                    }
-
-                    oldParticleCoordinates = particleCoordinates;
-                    try { Thread.sleep(100); }
-                    catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
-                }
-            }
-        }.runTaskAsynchronously(Bukkit.getPluginManager().getPlugin("PathFinderAPI"));
-    }
-
-    @Override
-    public void interpretOldPath (Player player, LinkedList<Coordinate> relativePath) { this.particleCoordinates.clear(); }
-
-    @Override
-    public void interpretNewPath (Player player, LinkedList<Coordinate> relativePath) {
-
-        int leadIndex = Math.min(this.configManager.getInt(ConfigNode.PARTICLE_VISUALIZER_PARTICLE_LEAD), relativePath.size() - 1);
-        this.particleCoordinates.add(relativePath.get(leadIndex));
-    }
-
-    @Override
-    public void endPath (Player player, LinkedList<Coordinate> fullPath) {
-
-        this.pathCompleted = true;
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-    }
-}
-```
+- [`com.tcc.pathfinderapi.api.visualizers.BlockVisualizer`](https://github.com/TheCrossboneColonies/PathFinderAPI/blob/master/src/main/java/com/tcc/pathfinderapi/api/visualizers/BlockVisualizer.java)
+- [`com.tcc.pathfinderapi.api.visualizers.ParticleVisualizer`](https://github.com/TheCrossboneColonies/PathFinderAPI/blob/master/src/main/java/com/tcc/pathfinderapi/api/visualizers/ParticleVisualizer.java)
 
 Here are two examples that utilze the above visualizers to generate paths between a player and a given destination.
 
