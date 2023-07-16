@@ -1,6 +1,22 @@
-name: PathFinderAPI
+name: 'PathFinderAPI'
 version: '${project.version}'
 main: com.tcc.pathfinderapi.PathFinderAPI
 api-version: 1.19
-authors: [ kwilk ]
-description: Developer utility to find paths between locations or entities
+authors: [ kwilk, StarbuckBarista ]
+description: 'Developer utility to find and generate paths between locations or entities.'
+
+commands:
+  pathapi find blocks:
+    description: 'Finds a path between two locations of a world using a block visualization.'
+    usage: 'Usage: /pathapi find blocks [Start; X Y Z] [End; X Y Z]'
+  pathapi find particles:
+    description: 'Finds a path between two locations of a world using a particle visualization.'
+    usage: 'Usage: /pathapi find particles [Start; X Y Z] [End; X Y Z]'
+
+permissions:
+  pathapi.find.*:
+    description: 'Allows usage of all the /pathapi find commands.'
+    default: op
+    children:
+      pathapi.find.blocks: true
+      pathapi.find.particles: true
