@@ -19,7 +19,7 @@ public class ParticleVisualizer implements PathVisualizer {
     private List<Coordinate> particleCoordinates;
     private List<Coordinate> oldParticleCoordinates;
     private Map<Coordinate, Double> oldParticleHeightAdditions;
-    private ConfigManager configManager = ConfigManager.getInstance();;
+    private ConfigManager configManager = ConfigManager.getInstance();
 
     @Override
     public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
