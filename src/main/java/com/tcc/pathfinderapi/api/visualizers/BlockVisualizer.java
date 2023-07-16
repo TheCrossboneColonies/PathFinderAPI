@@ -16,7 +16,7 @@ import com.tcc.pathfinderapi.objects.Coordinate;
 public class BlockVisualizer implements PathVisualizer {
     
     private Map<Coordinate, BlockData> blockData;
-    private ConfigManager configManager = ConfigManager.getInstance();;
+    private ConfigManager configManager = ConfigManager.getInstance();
 
     @Override
     public void initializePath (Player player, LinkedList<Coordinate> fullPath) {
