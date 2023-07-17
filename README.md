@@ -1,6 +1,8 @@
 # PathFinderAPI
 An API to intelligently generate paths between locations in a Minecraft world.
 
+[![](https://jitpack.io/v/TheCrossboneColonies/PathFinderAPI.svg)](https://jitpack.io/#TheCrossboneColonies/PathFinderAPI)
+
 ## About PathFinderAPI
 PathFinderAPI is a quick and intelligent library developed around the [A* Search Algorithm](https://en.wikipedia.org/wiki/A*_search_algorithm). However, our team has modified it to be even faster by making it a [Heuristic Greedy Solution](https://en.wikipedia.org/wiki/Greedy_algorithm). This project utilizes algorithms seen in the real world to deliver high-speed and efficient path generation in Minecraft.
 
@@ -25,8 +27,35 @@ While PathFinderAPI is intended to be utilized as an extension of other plugins,
 ## Development
 PathFinderAPI is designed to be easily integrated into any Spigot plugin with minimal effort needed from other developers.
 
-### Importing
-TODO
+### Installation
+#### Gradle
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.TheCrossboneColonies:PathFinderAPI:v1.0'
+}
+```
+
+#### Maven
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url> 
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.TheCrossboneColonies</groupId>
+        <artifactId>PathFinderAPI</artifactId>
+        <version>v1.0</version>
+    </dependency>
+</dependencies>
+```
 
 ### API Methods
 All of the necessary classes and methods for utilizing the PathFinderAPI are accessible from `com.tcc.pathfinderapi.api`.
